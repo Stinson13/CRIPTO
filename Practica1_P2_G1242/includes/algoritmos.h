@@ -17,3 +17,4 @@ extern int optind, opterr, optopt;
 void getGDC(mpz_t a, mpz_t b, mpz_t gdc);
 int getMultInverse(mpz_t a, mpz_t b, mpz_t inverse);
 void toUpperOnly(char* src);
+void determinante(mpz_t** matrix, int n, mpz_t det);

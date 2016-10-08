@@ -122,6 +122,60 @@ void toUpperOnly(char* src) {
 	src[j] = '\0';
 }
 
+void determinante(mpz_t** matrix, int n, mpz_t det) {
+	
+	int i;
+	int j;
+	int k;
+	mpz_t result;
+	mpz_t suma;
+	
+	if (n == 2) {
+		// Guarda temporalmente los resultados en matrix[0][0|1]
+		mpz_mul(matrix[0][0], matrix[0][0], matrix[1][1]);
+		mpz_mul(matrix[0][1], matrix[1][0], matrix[0][1]);
+		mpz_add(det, matrix[0][0], matrix[0][1]);
+		return;
+	}
+	
+	for (i = 0; i < n; i++) {
+		// TODO liberar y init de todos los elementos
+		mpz_t **nm;
+		
+		for (j = 0; j < n; j++) {
+			if (j != i) {
+				for (k = 0; k < n; k++) {
+					int index = -1;
+					
+					if (j < i) {
+						index = j;
+					} else if (j > i) {
+						index = j - 1;
+					}
+					
+					mpz_set(nm[index][k - 1], matrix[j][k]);
+				}
+			}
+		}
+		
+		mpz_inits(result, suma, NULL);
+		
+		if (i % 2 == 0) {
+			determinante(nm, n - 1, result);
+			mpz_mul(result, matrix[i][0], result);
+			mpz_add(suma, suma, result);
+		} else {
+			determinante(nm, n - 1, result);
+			mpz_mul(result, matrix[i][0], result);
+			mpz_sub(suma, suma, result);
+		}
+	}
+	
+	mpz_set(det, suma);
+	
+	mpz_clears(result, suma);
+}
+
 
 
 
