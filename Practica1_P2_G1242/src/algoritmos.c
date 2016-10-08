@@ -137,11 +137,17 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
 		mpz_add(det, matrix[0][0], matrix[0][1]);
 		return;
 	}
+
+	// TODO liberar y init de todos los elementos
+	mpz_t **nm;
+
+	for (i = 0; i < (n - 1); i++) {
+		for (j = 0; j < (n - 1); j++) {
+			mpz_init(nm[i][j]);
+		}
+	}
 	
 	for (i = 0; i < n; i++) {
-		// TODO liberar y init de todos los elementos
-		mpz_t **nm;
-		
 		for (j = 0; j < n; j++) {
 			if (j != i) {
 				for (k = 0; k < n; k++) {
@@ -174,6 +180,11 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
 	mpz_set(det, suma);
 	
 	mpz_clears(result, suma);
+	for (i = 0; i < (n - 1); i++) {
+		for (j = 0; j < (n - 1); j++) {
+			mpz_clear(nm[i][j]);
+		}
+	}
 }
 
 

@@ -8,8 +8,13 @@ int main (int argc,char *argv[]) {
 	}
 	
 	int modo = -1;
+	int n = -1;
+	int i;
+	int j;
 	mpz_t m;
-	mpz_t n;
+	mpz_t **matrix;
+	mpz_t a;
+	mpz_t det;
 	int c = 0;
 	char filek[MAX_STR] = {0};
 	char filein[MAX_STR] = {0};
@@ -46,7 +51,7 @@ int main (int argc,char *argv[]) {
 				modo = DESCIFRAR;
 				break;
 			case 'n':
-				mpz_set_str(n, optarg, 10);
+				n = atoi(optarg);
 				break;
 			case 'k':
 				strcpy(filek, optarg);
@@ -81,10 +86,69 @@ int main (int argc,char *argv[]) {
 		}
 	}
 	
-	if (modo == -1 || !mpz_sgn(n) || !mpz_sgn(m)) {
+	if (modo == -1 || n == -1 || !mpz_sgn(m)) {
 		printf("{-C|-D} {-m |Zm|} {-n Nk} {-k filek} son obligatorios\n");
 		return -1;
 	}
-	
+
+	mpz_inits(a, det, NULL);
+
+	matrix = malloc(sizeof(mpz_t) * n);
+
+	if (!matrix) {
+		printf("Error al reservar memoria\n");
+		return -1;
+	}
+
+	for (i = 0; i < n; i++) {
+		matrix[i] = malloc(sizeof(mpz_t) * n);
+
+		if (!matrix[i]) {
+			printf("Error al reservar memoria\n");
+			return -1;
+		}
+
+		/*for (j = 0; j < n; j++) {
+			matrix[i][j] = malloc(sizeof(mpz_t));
+
+			if (!matrix[i][j]) {
+				printf("Error al reservar memoria\n");
+				return -1;
+			}
+		}*/
+	}
+
+	mpz_array_init(**matrix, n, 512);
+
+	/*for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			mpz_init(matrix[i][j]);
+		}
+	}*/
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			mpz_inp_str(matrix[i][j], fk, 10);
+			gmp_printf("Matrix[%d][%d]= %Zd", i, j, matrix[i][i]);
+		}
+	}
+
+	determinante(matrix, n, det);
+	gmp_printf("El valor del determinante de la matriz dada es = %Zd", det);
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			mpz_clear(matrix[i][j]);
+		}
+	}
+
+	for (i = 0; i < n; i++) {
+		free(matrix[i]);
+
+		for (j = 0; j < n; j++) {
+			free(matrix[i][j]);
+		}
+	}
+
 	return 0;
 }
