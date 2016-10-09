@@ -9,7 +9,9 @@
 
 #define MAX_STR 128
 
-enum Modo {CIFRAR, DESCIFRAR};
+enum Modo {
+    CIFRAR, DESCIFRAR
+};
 
 extern char *optarg;
 extern int optind, opterr, optopt;

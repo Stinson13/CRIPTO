@@ -20,7 +20,7 @@ $(EXE3): $(SRC)cifrado_hill.c $(LIB)libgmp.a
 native: $(SRC)algoritmos.c $(SRC)cifrado_afin.c $(SRC)cifrado_afin_+.c $(SRC)cifrado_hill.c
 	$(CC) -o $(EXE1) $(SRC)cifrado_afin.c $(SRC)algoritmos.c -lgmp
 	$(CC) -o $(EXE2) $(SRC)cifrado_afin_+.c $(SRC)algoritmos.c -lgmp
-	$(CC) -o $(EXE3) $(SRC)cifrado_hill.c $(SRC)algoritmos.c -lgmp
+	$(CC) -g -o $(EXE3) $(SRC)cifrado_hill.c $(SRC)algoritmos.c -lgmp
 	
 clean:
 	rm -f $(EXE1) $(EXE2) $(EXE3)
