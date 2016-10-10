@@ -136,12 +136,12 @@ void toModM(mpz_t x, mpz_t m) {
 		} else {
 			mpz_abs(q, q);
 			mpz_add_ui(q, q, 1L);
-			gmp_printf(" (2) %Zd %% %Zd = %Zd + %Zd * %Zd\n", x, m, x, q, m);
+			gmp_printf("(2) %Zd %% %Zd = %Zd + %Zd * %Zd\n", x, m, x, q, m);
 			mpz_mul(q, m, q);
 			mpz_add(x, x, q);
 		}
 	} else if (mpz_cmp(x, m) >= 0) {
-		gmp_printf(" (3) %Zd %% %Zd = %Zd - %Zd * %Zd\n", x, m, x, q, m);
+		gmp_printf("(3) %Zd %% %Zd = %Zd - %Zd * %Zd\n", x, m, x, q, m);
 		mpz_mul(q, m, q);
 		mpz_sub(x, x, q);
 	}
