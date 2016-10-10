@@ -131,17 +131,14 @@ void toModM(mpz_t x, mpz_t m) {
 	if (mpz_sgn(x) < 0) {
 		//|x| < m
 		if (mpz_sgn(q) == 0) {
-			gmp_printf("(1) %Zd %% %Zd = %Zd + %Zd\n", x, m, x, m);
 			mpz_add(x, x, m);
 		} else {
 			mpz_abs(q, q);
 			mpz_add_ui(q, q, 1L);
-			gmp_printf("(2) %Zd %% %Zd = %Zd + %Zd * %Zd\n", x, m, x, q, m);
 			mpz_mul(q, m, q);
 			mpz_add(x, x, q);
 		}
 	} else if (mpz_cmp(x, m) >= 0) {
-		gmp_printf("(3) %Zd %% %Zd = %Zd - %Zd * %Zd\n", x, m, x, q, m);
 		mpz_mul(q, m, q);
 		mpz_sub(x, x, q);
 	}
@@ -161,13 +158,10 @@ void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
     if (n == 2) {
         mpz_t r1, r2;
         mpz_inits(r1, r2, NULL);
-        gmp_printf("%Zd * %Zd\n", matrix[0][0], matrix[1][1]);
         mpz_mul(r1, matrix[0][0], matrix[1][1]);
-        gmp_printf("%Zd * %Zd\n", matrix[1][0], matrix[0][1]);
         mpz_mul(r2, matrix[1][0], matrix[0][1]);
         mpz_sub(det, r1, r2);
         toModM(det, m);
-        gmp_printf("Res= %Zd\n", det);
         mpz_clears(r1, r2, NULL);
         return;
     }
@@ -191,7 +185,11 @@ void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
         }
     }
 
-    mpz_array_init(**nm, (n - 1), 512);
+   	for (i = 0; i < (n - 1); i++) {
+    	for (j = 0; j < (n - 1); j++) {
+    		mpz_init2(nm[i][j], 1024);
+    	}
+	}
 
 	mpz_inits(result, suma, NULL);
 
@@ -214,29 +212,121 @@ void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
 		determinante(nm, (n - 1), result, m);
             
         if (i % 2 == 0) {
-            gmp_printf("suma = %Zd + %Zd * %Zd\n", suma, matrix[i][0], result);
-            
 			mpz_mul(result, matrix[i][0], result);
             mpz_add(suma, suma, result);
-            gmp_printf("suma = %Zd\n", suma);
+
         } else {
-			gmp_printf("suma = %Zd - %Zd * %Zd\n", suma, matrix[i][0], result);
-			
-			mpz_mul(result, matrix[i][0], result);
+        	mpz_mul(result, matrix[i][0], result);
             mpz_sub(suma, suma, result);
         }
+
         toModM(suma, m);
     }
 
     mpz_set(det, suma);
 
     mpz_clears(result, suma, NULL);
-    /*for (i = 0; i < (n - 1); i++) {
-            for (j = 0; j < (n - 1); j++) {
-                    mpz_clear(nm[i][j]);
-            }
-    }*/
+    
+    for (i = 0; i < (n - 1); i++) {
+		for (j = 0; j < (n - 1); j++) {
+			mpz_clear(nm[i][j]);
+		}
+	}
+
+	for (i = 0; i < (n - 1); i++) {
+		free(nm[i]);
+	}
+
+	free(nm);
+
+	return;
 }
+
+void matrixTransposed(mpz_t** matrix, int n, mpz_t** matrixTrans) {
+
+	int i;
+	int j;
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			mpz_set(matrixTrans[i][j], matrix[j][i]);
+		}
+	}
+}
+
+void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m) {
+
+	int i;
+	int j;
+	int k;
+	int l;
+	mpz_t base;
+	mpz_t rop;
+
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			mpz_t** det;
+			mpz_t valueDet;
+
+			det = malloc(sizeof (mpz_t) * (n - 1));
+
+		    if (!det) {
+		        printf("Error al reservar memoria\n");
+		        return;
+		    }
+
+		    for (i = 0; i < (n - 1); i++) {
+		        det[i] = malloc(sizeof (mpz_t) * (n - 1));
+
+		        if (!det[i]) {
+		            printf("Error al reservar memoria\n");
+		            return;
+		        }
+		    }
+
+		    for (i = 0; i < (n - 1); i++) {
+		    	for (j = 0; j < (n - 1); j++) {
+		    		mpz_init2(det[i][j], 1024);
+		    	}
+			}
+
+			for (k = 0; k < n; k++) {
+				if (k != i) {
+					for (l = 0; l < n; l++) {
+						if (l != j) {
+							int index1 = k < i ? k : k-1;
+							int index2 = l < j ? l : l-1;
+
+							mpz_set(det[index1][index2], matrix[k][l]);
+						}
+					}
+				}
+			}
+
+			mpz_inits(valueDet, rop, NULL);
+
+			determinante(det, n-1, valueDet, m);
+
+			mpz_init_set_si (base, -1L);
+			mpz_pow_ui (rop, base, (long)(i+j+2));
+			mpz_mul(matrixCof[i][j] , valueDet, rop);
+		}
+	}
+
+	mpz_clears(base, rop, NULL);
+
+	return;
+}
+
+void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m) {
+
+	matrixCofactors(matrix, n, matrixAdj, m);
+	matrixTransposed(matrix, n, matrixAdj);
+
+	return;
+}
+
+
 
 
 
