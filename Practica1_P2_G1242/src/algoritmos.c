@@ -163,6 +163,8 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
 
     mpz_array_init(**nm, (n - 1), 512);
 
+	mpz_inits(result, suma, NULL);
+
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
         	/* 
@@ -185,18 +187,15 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
                 }
             }
         }
-
-        mpz_inits(result, suma, NULL);
-
+        
+		determinante(nm, (n - 1), result);
+        mpz_mul(result, matrix[i][0], result);
+            
         if (i % 2 == 0) {
-            determinante(nm, (n - 1), result);
-            mpz_mul(result, matrix[i][0], result);
             gmp_printf("suma = %Zd + %Zd * %Zd\n", suma, matrix[i][0], result);
             mpz_add(suma, suma, result);
             gmp_printf("suma = %Zd\n", suma);
         } else {
-            determinante(nm, (n - 1), result);
-            mpz_mul(result, matrix[i][0], result);
             mpz_sub(suma, suma, result);
             gmp_printf("suma = %Zd - %Zd * %Zd\n", suma, matrix[i][0], result);
         }
@@ -204,12 +203,12 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
 
     mpz_set(det, suma);
 
-    mpz_clears(result, suma);
-    for (i = 0; i < (n - 1); i++) {
+    mpz_clears(result, suma, NULL);
+    /*for (i = 0; i < (n - 1); i++) {
             for (j = 0; j < (n - 1); j++) {
                     mpz_clear(nm[i][j]);
             }
-    }
+    }*/
 }
 
 
