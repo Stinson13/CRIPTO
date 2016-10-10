@@ -182,11 +182,12 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             mpz_inp_str(matrix[i][j], fk, 10);
-            gmp_printf("Matrix[%d][%d]= %Zd\n", i, j, matrix[i][j]);
+            toModM(matrix[i][j], m);
+            gmp_printf("Matrix[%d][%d] % m= %Zd\n", i, j, matrix[i][j]);
         }
     }
 
-    determinante(matrix, n, det);
+    determinante(matrix, n, det, m);
     gmp_printf("El valor del determinante de la matriz dada es = %Zd\n", det);
 
     //Esta pagina dice que no se libere el resultado de mpz_array_init

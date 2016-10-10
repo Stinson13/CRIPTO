@@ -122,7 +122,35 @@ void toUpperOnly(char* src) {
     src[j] = '\0';
 }
 
-void determinante(mpz_t** matrix, int n, mpz_t det) {
+void toModM(mpz_t x, mpz_t m) {
+	mpz_t q;
+	mpz_init(q);
+	
+	mpz_tdiv_q(q, x, m);
+	
+	if (mpz_sgn(x) < 0) {
+		//|x| < m
+		if (mpz_sgn(q) == 0) {
+			gmp_printf("(1) %Zd %% %Zd = %Zd + %Zd\n", x, m, x, m);
+			mpz_add(x, x, m);
+		} else {
+			mpz_abs(q, q);
+			mpz_add_ui(q, q, 1L);
+			gmp_printf(" (2) %Zd %% %Zd = %Zd + %Zd * %Zd\n", x, m, x, q, m);
+			mpz_mul(q, m, q);
+			mpz_add(x, x, q);
+		}
+	} else if (mpz_cmp(x, m) >= 0) {
+		gmp_printf(" (3) %Zd %% %Zd = %Zd - %Zd * %Zd\n", x, m, x, q, m);
+		mpz_mul(q, m, q);
+		mpz_sub(x, x, q);
+	}
+	//else x is already % m
+	
+	mpz_clear(q);
+}
+
+void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
 
     int i;
     int j;
@@ -138,7 +166,9 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
         gmp_printf("%Zd * %Zd\n", matrix[1][0], matrix[0][1]);
         mpz_mul(r2, matrix[1][0], matrix[0][1]);
         mpz_sub(det, r1, r2);
+        toModM(det, m);
         gmp_printf("Res= %Zd\n", det);
+        mpz_clears(r1, r2, NULL);
         return;
     }
 
@@ -167,13 +197,7 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-        	/* 
-				La condicion del if hace que nunca pase por las posiciones matrix[0][N] ya
-				que en la primera iteracion j = 0 e i = 0, por tanto; j = i. Entonces, solo
-				hace las adjuntas a partir de la segunda columna de la matriz, y eso lo
-				realiza correctamente
-        	*/
-            if (j != i) {
+        	if (j != i) {
                 for (k = 1; k < n; k++) {
                     int index = -1;
 
@@ -182,23 +206,26 @@ void determinante(mpz_t** matrix, int n, mpz_t det) {
                     } else if (j > i) {
                         index = j - 1;
                     }
-
                     mpz_set(nm[index][k - 1], matrix[j][k]);
                 }
             }
         }
         
-		determinante(nm, (n - 1), result);
-        mpz_mul(result, matrix[i][0], result);
+		determinante(nm, (n - 1), result, m);
             
         if (i % 2 == 0) {
             gmp_printf("suma = %Zd + %Zd * %Zd\n", suma, matrix[i][0], result);
+            
+			mpz_mul(result, matrix[i][0], result);
             mpz_add(suma, suma, result);
             gmp_printf("suma = %Zd\n", suma);
         } else {
+			gmp_printf("suma = %Zd - %Zd * %Zd\n", suma, matrix[i][0], result);
+			
+			mpz_mul(result, matrix[i][0], result);
             mpz_sub(suma, suma, result);
-            gmp_printf("suma = %Zd - %Zd * %Zd\n", suma, matrix[i][0], result);
         }
+        toModM(suma, m);
     }
 
     mpz_set(det, suma);
