@@ -475,6 +475,26 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
 	return 0;
 }
 
+void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n, mpz_t m) {
+
+	mpz_t res;
+
+	mpz_init(res);
+
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			for (int k = 0; k < n; k++) {
+				mpz_mul(res, matrix1[i][k], matrix2[k][j]);
+				mpz_add(matrixRes[i][j], matrixRes[i][j], res);
+				toModM(matrixRes[i][j], m);
+			}
+		}
+	}
+
+	mpz_clear(res);
+	return;
+}
+
 
 
 

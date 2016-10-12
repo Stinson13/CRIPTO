@@ -23,9 +23,13 @@ int main(int argc, char *argv[]) {
     int n = -1;
     int i;
     int j;
+    int index;
     mpz_t m;
-    mpz_t **matrix;
-    mpz_t **matrixInv;
+    mpz_t **matrixP;
+    mpz_t **matrixC;
+    mpz_t **matrixK;
+    //mpz_t **matrixInv;
+    //mpz_t** matrixRes;
     int c = 0;
     char filek[MAX_STR] = {0};
     char filein[MAX_STR] = {0};
@@ -158,33 +162,111 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
 	}
 
-    matrix = malloc(sizeof (mpz_t) * n);
+    matrixP = malloc(sizeof (mpz_t) * n);
+    matrixC = malloc(sizeof (mpz_t) * n);
+    matrixK = malloc(sizeof (mpz_t) * n);
 
-    if (!matrix) {
+    if (!matrixP || !matrixC || !matrixK) {
         printf("Error al reservar memoria\n");
         return -1;
     }
 
     for (i = 0; i < n; i++) {
-        matrix[i] = malloc(sizeof (mpz_t) * n);
+        matrixP[i] = malloc(sizeof (mpz_t) * n);
+        matrixC[i] = malloc(sizeof (mpz_t) * n);
+        matrixK[i] = malloc(sizeof (mpz_t) * n);
 
-        if (!matrix[i]) {
+        if (!matrixP[i] || !matrixC[i] || !matrixK[i]) {
             printf("Error al reservar memoria\n");
+            free(matrixP);
+            free(matrixC);
+            free(matrixK);
             return -1;
         }
     }
 
     for (i = 0; i < n; i++) {
     	for (j = 0; j < n; j++) {
-    		mpz_init2(matrix[i][j], 1024);
+    		mpz_init2(matrixP[i][j], 1024);
+    		mpz_init2(matrixC[i][j], 1024);
+    		mpz_init2(matrixK[i][j], 1024);
     	}
 	}
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            mpz_inp_str(matrix[i][j], fk, 10);
-            toModM(matrix[i][j], m);
+            mpz_inp_str(matrixK[i][j], fk, 10);
+            toModM(matrixK[i][j], m);
         }
+    }
+
+    if (fin == NULL) {
+		fin = stdin;
+	}
+	if (fout == NULL) {
+		fout = stdout;
+	}
+	
+	char strbuf[MAX_STR];
+	int len;
+	while (!feof(fin) && !ferror(fin)) {
+		if (fin == stdin) {
+			fgets(strbuf, MAX_STR, fin);
+			if(feof(fin)) {
+				break;
+			}
+			len = strlen(strbuf);
+			if (strbuf[len-1] == '\n') {
+				len--;
+				strbuf[len] = '\0';			
+			}			
+		} else {
+			len = fread(strbuf, sizeof(char), MAX_STR, fin);
+		}
+
+		printf("Read %d bytes\n", len);
+		
+		if (modo == CIFRAR) {
+			toUpperOnly(strbuf);
+			puts(strbuf);
+			len = strlen(strbuf);
+
+			index = 0;
+
+			while (index < len) {
+				for (i = 0; i < n; i++) {
+					for (j = 0; j < n; j++) {
+						if (strbuf[index] == '\0') {
+							// Añadir 0's o letras aleatorias sin incremnetar variable index
+
+						} else {
+							mpz_set_ui(matrixP[i][j], (long)strbuf[index]);
+							index++;
+						}
+					}
+				}
+
+				mulMatrixMatrix(matrixP, matrixK, matrixC, n, m);
+
+				for (i = 0; i < n; i++) {
+					fwrite(strbuf, len, sizeof(char), fout);
+				}
+
+			}
+			
+		} else {
+			// Descifrar
+			printf("Descifrar\n");
+		}
+	}
+
+    /*printf("La matriz dada es (modulo m): \n");
+    for (i = 0; i < n; i++) {
+    	printf("| ");
+    	for (j = 0; j < n; j++) {
+    		gmp_printf("%Zd ", matrix[i][j]);
+    	}
+    	printf("|\n");
     }
 
     matrixInv = malloc(sizeof (mpz_t) * n);
@@ -211,7 +293,7 @@ int main(int argc, char *argv[]) {
 
     matrixInverse(matrix, n, m, matrixInv);
 
-    printf("La matriz inversa es: \n");
+    printf("Su matriz inversa es: \n");
     for (i = 0; i < n; i++) {
     	printf("| ");
     	for (j = 0; j < n; j++) {
@@ -219,6 +301,41 @@ int main(int argc, char *argv[]) {
     	}
     	printf("|\n");
     }
+
+    matrixRes = malloc(sizeof (mpz_t) * n);
+
+    if (!matrixRes) {
+        printf("Error al reservar memoria\n");
+        return -1;
+    }
+
+    for (i = 0; i < n; i++) {
+        matrixRes[i] = malloc(sizeof (mpz_t) * n);
+
+        if (!matrixRes[i]) {
+            printf("Error al reservar memoria\n");
+            return -1;
+        }
+    }
+
+    for (i = 0; i < n; i++) {
+    	for (j = 0; j < n; j++) {
+    		mpz_init2(matrixRes[i][j], 1024);
+    	}
+	}
+
+    mulMatrixMatrix(matrix, matrixInv, matrixRes, n, m);
+
+    printf("El resultado de multiplicar la matriz dada por su inversa es: \n");
+    for (i = 0; i < n; i++) {
+    	printf("| ");
+    	for (j = 0; j < n; j++) {
+    		gmp_printf("%Zd ", matrixRes[i][j]);
+    	}
+    	printf("|\n");
+    }*/
+
+
 
     //Esta pagina dice que no se libere el resultado de mpz_array_init
     //http://web.mit.edu/gnu/doc/html/gmp_4.html
@@ -234,18 +351,28 @@ int main(int argc, char *argv[]) {
 
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
-			mpz_clear(matrix[i][j]);
-			mpz_clear(matrixInv[i][j]);
+			mpz_clear(matrixP[i][j]);
+			mpz_clear(matrixC[i][j]);
+			mpz_clear(matrixK[i][j]);
+			//mpz_clear(matrixInv[i][j]);
+			//mpz_clear(matrixRes[i][j]);
 		}
 	}
 
 	for (i = 0; i < n; i++) {
-		free(matrix[i]);
-		free(matrixInv[i]);
+		free(matrixP[i]);
+		free(matrixC[i]);
+		free(matrixK[i]);
+		//free(matrixInv[i]);
+		//free(matrixRes[i]);
 	}
 
-	free(matrix);
-	free(matrixInv);
+	free(matrixP);
+	free(matrixC);
+	free(matrixK);
+
+	//free(matrixInv);
+	//free(matrixRes);
 
 	mpz_clear(m);
 	

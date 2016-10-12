@@ -26,3 +26,4 @@ void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m);
 void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m);
 void mulMatrixConst(mpz_t cons, mpz_t** matrix, mpz_t** matrixRes, int n);
 int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv);
+void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n, mpz_t m);
