@@ -1,17 +1,5 @@
 #include "../includes/algoritmos.h"
 
-void free_mpz_matrix(mpz_t** mat, int rows, int cols) {
-       int i, j;
-       for(i = 0; i < rows; i++) {
-               for (j = 0; j < cols; j++) {
-                       mpz_clear(mat[i][j]);
-               }
-               free(mat[i]);
-       }
-       free(mat);
-}
-
-
 int main(int argc, char *argv[]) {
 
     if (argc < 7) {
@@ -162,28 +150,10 @@ int main(int argc, char *argv[]) {
 	}
     
 
-    mpz_inits(a, det, NULL);
-
-    matrix = malloc(sizeof (mpz_t) * n);
-
-    if (!matrix) {
-        printf("Error al reservar memoria\n");
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        matrix[i] = malloc(sizeof (mpz_t) * n);
-
-        if (!matrix[i]) {
-            printf("Error al reservar memoria\n");
-            return -1;
-        }
-    }
-
-    for (i = 0; i < n; i++) {
-    	for (j = 0; j < n; j++) {
-    		mpz_init2(matrix[i][j], 1024);
-    	}
+    init_mpz_matrix(&matrix, n, n);
+    if (matrix == NULL) {
+		mpz_clear(m);
+		return EXIT_FAILURE;
 	}
 
     for (i = 0; i < n; i++) {
@@ -193,29 +163,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
+	mpz_init(det);
+
     determinante(matrix, n, det, m);
     gmp_printf("El valor del determinante de la matriz dada es = %Zd\n", det);
+    mpz_clear(det);
 
-    matrixTrans = malloc(sizeof (mpz_t) * n);
-
-    if (!matrixTrans) {
-        printf("Error al reservar memoria\n");
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        matrixTrans[i] = malloc(sizeof (mpz_t) * n);
-
-        if (!matrixTrans[i]) {
-            printf("Error al reservar memoria\n");
-            return -1;
-        }
-    }
-
-    for (i = 0; i < n; i++) {
-    	for (j = 0; j < n; j++) {
-    		mpz_init2(matrixTrans[i][j], 1024);
-    	}
+    init_mpz_matrix(&matrixTrans, n, n);
+    if (matrixTrans == NULL) {
+		free_mpz_matrix(matrix, n, n);
+		mpz_clear(m);
+		return EXIT_FAILURE;
 	}
 
     matrixTransposed(matrix, n, matrixTrans);
@@ -226,26 +184,12 @@ int main(int argc, char *argv[]) {
 
     printf("\n");
 
-    matrixAdj = malloc(sizeof (mpz_t) * n);
-
-    if (!matrixAdj) {
-        printf("Error al reservar memoria\n");
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        matrixAdj[i] = malloc(sizeof (mpz_t) * n);
-
-        if (!matrixAdj[i]) {
-            printf("Error al reservar memoria\n");
-            return -1;
-        }
-    }
-
-    for (i = 0; i < n; i++) {
-    	for (j = 0; j < n; j++) {
-    		mpz_init2(matrixAdj[i][j], 1024);
-    	}
+    init_mpz_matrix(&matrixAdj, n, n);
+    
+    if (matrixAdj == NULL) {
+		free_mpz_matrix(matrix, n, n);
+		free_mpz_matrix(matrixTrans, n, n);
+		return EXIT_FAILURE;
 	}
 
     matrixAdjoint(matrixTrans, n, matrixAdj, m);
@@ -254,10 +198,7 @@ int main(int argc, char *argv[]) {
         gmp_printf("|%Zd %Zd %Zd|\n", matrixAdj[i][0], matrixAdj[i][1], matrixAdj[i][2]);
     }
 
-    //Esta pagina dice que no se libere el resultado de mpz_array_init
-    //http://web.mit.edu/gnu/doc/html/gmp_4.html
-    //free_mpz_matrix(matrix, n, n);
-	if (fin != NULL) {
+    if (fin != NULL) {
 		fclose(fin);
 	}
 	if (fout != NULL) {
@@ -266,25 +207,11 @@ int main(int argc, char *argv[]) {
 
 	fclose(fk);
 
-	for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) {
-			mpz_clear(matrix[i][j]);
-			mpz_clear(matrixTrans[i][j]);
-			mpz_clear(matrixAdj[i][j]);
-		}
-	}
+	free_mpz_matrix(matrix, n, n);
+	free_mpz_matrix(matrixAdj, n, n);
+	free_mpz_matrix(matrixTrans, n, n);
 
-	for (i = 0; i < n; i++) {
-		free(matrix[i]);
-		free(matrixTrans[i]);
-		free(matrixAdj[i]);
-	}
-
-	free(matrix);
-	free(matrixTrans);
-	free(matrixAdj);
-
-	mpz_clears(m, a, det, NULL);
+	mpz_clear(m);
 	
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -166,29 +166,11 @@ void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
         return;
     }
 
-    // TODO liberar y init de todos los elementos
     mpz_t **nm;
 
-    nm = malloc(sizeof (mpz_t) * (n - 1));
-
-    if (!nm) {
-        printf("Error al reservar memoria\n");
-        return;
-    }
-
-    for (i = 0; i < (n - 1); i++) {
-        nm[i] = malloc(sizeof (mpz_t) * (n - 1));
-
-        if (!nm[i]) {
-            printf("Error al reservar memoria\n");
-            return;
-        }
-    }
-
-   	for (i = 0; i < (n - 1); i++) {
-    	for (j = 0; j < (n - 1); j++) {
-    		mpz_init2(nm[i][j], 1024);
-    	}
+    init_mpz_matrix(&nm, n-1, n-1);
+    if (nm == NULL) {
+		return;
 	}
 
 	mpz_inits(result, suma, NULL);
@@ -226,18 +208,7 @@ void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {
     mpz_set(det, suma);
 
     mpz_clears(result, suma, NULL);
-    
-    for (i = 0; i < (n - 1); i++) {
-		for (j = 0; j < (n - 1); j++) {
-			mpz_clear(nm[i][j]);
-		}
-	}
-
-	for (i = 0; i < (n - 1); i++) {
-		free(nm[i]);
-	}
-
-	free(nm);
+    free_mpz_matrix(nm, n-1, n-1);
 
 	return;
 }
@@ -260,62 +231,41 @@ void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m) {
 	int j;
 	int k;
 	int l;
-	mpz_t base;
-	mpz_t rop;
 
+	mpz_t** det;
+	mpz_t valueDet;
+	
+	init_mpz_matrix(&det, n-1, n-1);
+	if (det == NULL) {
+		return;
+	}
+	
+	mpz_init(valueDet);
+	
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
-			mpz_t** det;
-			mpz_t valueDet;
-
-			det = malloc(sizeof (mpz_t) * (n - 1));
-
-		    if (!det) {
-		        printf("Error al reservar memoria\n");
-		        return;
-		    }
-
-		    for (i = 0; i < (n - 1); i++) {
-		        det[i] = malloc(sizeof (mpz_t) * (n - 1));
-
-		        if (!det[i]) {
-		            printf("Error al reservar memoria\n");
-		            return;
-		        }
-		    }
-
-		    for (i = 0; i < (n - 1); i++) {
-		    	for (j = 0; j < (n - 1); j++) {
-		    		mpz_init2(det[i][j], 1024);
-		    	}
-			}
-
 			for (k = 0; k < n; k++) {
 				if (k != i) {
 					for (l = 0; l < n; l++) {
 						if (l != j) {
 							int index1 = k < i ? k : k-1;
 							int index2 = l < j ? l : l-1;
-
 							mpz_set(det[index1][index2], matrix[k][l]);
 						}
 					}
 				}
 			}
-
-			mpz_inits(valueDet, rop, NULL);
-
 			determinante(det, n-1, valueDet, m);
-
-			mpz_init_set_si (base, -1L);
-			mpz_pow_ui (rop, base, (long)(i+j+2));
-			mpz_mul(matrixCof[i][j] , valueDet, rop);
+			if (((i+j) % 2) == 1) {
+				mpz_neg(valueDet, valueDet);
+				toModM(valueDet, m);
+			}
+			mpz_set(matrixCof[i][j], valueDet);
 		}
 	}
-
-	mpz_clears(base, rop, NULL);
-
-	return;
+	
+	free_mpz_matrix(det, n-1, n-1);
+	mpz_clear(valueDet);
 }
 
 void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m) {
@@ -326,8 +276,41 @@ void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m) {
 	return;
 }
 
+mpz_t** init_mpz_matrix(mpz_t*** mat, int rows, int cols) {
+	int i, j;
+	mpz_t** mt = *mat = (mpz_t**) malloc(sizeof (mpz_t*) * rows);
+	
+	if (!mt) {
+		printf("Error al reservar memoria\n");
+		return NULL;
+	}
+	
+	for (i = 0; i < rows; i++) {
+		
+		mt[i] = (mpz_t*) malloc(sizeof (mpz_t) * rows);
+		if (!mt[i]) {
+			free_mpz_matrix(mt, i, cols);
+			printf("Error al reservar memoria\n");
+			return NULL;
+		}
+		
+		for (j = 0; j < cols; j++) {
+			mpz_init(mt[i][j]);
+		}
+	}
+	
+	return *mat;
+}
 
-
-
+void free_mpz_matrix(mpz_t** mat, int rows, int cols) {
+       int i, j;
+       for(i = 0; i < rows; i++) {
+               for (j = 0; j < cols; j++) {
+                       mpz_clear(mat[i][j]);
+               }
+               free(mat[i]);
+       }
+       free(mat);
+}
 
 
