@@ -267,7 +267,7 @@ void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m) {
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < n; j++) {
 		
-			init_mpz_matrix(det, matrix_size_adj, matrix_size_adj);
+			init_mpz_matrix(&det, matrix_size_adj, matrix_size_adj);
 
 			for (k = 0; k < n; k++) {
 				if (k != i) {
@@ -303,8 +303,6 @@ void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m) {
 		}
 	}
 	
-	free_mpz_matrix(det, n-1, n-1);
-	mpz_clear(valueDet);
 }
 
 void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m) {
@@ -315,12 +313,14 @@ void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m) {
 
 void mulMatrixConst(mpz_t cons, mpz_t** matrix, mpz_t** matrixRes, int n) {
 
+	int i;
+	int j;
 	mpz_t res;
 
 	mpz_init(res);
 
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
 			mpz_mul(res, matrix[i][j], cons);
 			mpz_set(matrixRes[i][j], res);
 		}
@@ -373,70 +373,26 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
 		return -1;
 	}
 
-	matrixTrans = malloc(sizeof (mpz_t) * n);
+	init_mpz_matrix(&matrixTrans, n, n);
 
-    if (!matrixTrans) {
-        printf("Error al reservar memoria\n");
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        matrixTrans[i] = malloc(sizeof (mpz_t) * n);
-
-        if (!matrixTrans[i]) {
-            printf("Error al reservar memoria\n");
-            return -1;
-        }
-    }
-
-    for (i = 0; i < n; i++) {
-    	for (j = 0; j < n; j++) {
-    		mpz_init2(matrixTrans[i][j], 1024);
-    	}
+	if (!matrixTrans) {
+		return -1;
 	}
 
     matrixTransposed(matrix, n, matrixTrans, m);
 
-    matrixAdj = malloc(sizeof (mpz_t) * n);
+    init_mpz_matrix(&matrixAdj, n, n);
 
-    if (!matrixAdj) {
-        printf("Error al reservar memoria\n");
-        return -1;
-    }
-
-    for (i = 0; i < n; i++) {
-        matrixAdj[i] = malloc(sizeof (mpz_t) * n);
-
-        if (!matrixAdj[i]) {
-            printf("Error al reservar memoria\n");
-            return -1;
-        }
-    }
-
-    for (i = 0; i < n; i++) {
-    	for (j = 0; j < n; j++) {
-    		mpz_init2(matrixAdj[i][j], 1024);
-    	}
+	if (!matrixAdj) {
+		return -1;
 	}
 
     matrixAdjoint(matrixTrans, n, matrixAdj, m);
 
     mulMatrixConst(detInv, matrixAdj, matrixInv, n);
 
-    for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) {
-			mpz_clear(matrixTrans[i][j]);
-			mpz_clear(matrixAdj[i][j]);
-		}
-	}
-
-	for (i = 0; i < n; i++) {
-		free(matrixTrans[i]);
-		free(matrixAdj[i]);
-	}
-
-	free(matrixTrans);
-	free(matrixAdj);
+    free_mpz_matrix(matrixTrans, n, n);
+	free_mpz_matrix(matrixAdj, n, n);
 
 	mpz_clears(det, detInv, NULL);
 	return 0;
@@ -444,19 +400,30 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
 
 void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n, mpz_t m) {
 
+	int i;
+	int j;
+	int k;
 	mpz_t res;
 
 	mpz_init(res);
 
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			for (int k = 0; k < n; k++) {
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			for (k = 0; k < n; k++) {
 				mpz_mul(res, matrix1[i][k], matrix2[k][j]);
 				mpz_add(matrixRes[i][j], matrixRes[i][j], res);
 				toModM(matrixRes[i][j], m);
 			}
 		}
 	}
+
+	/*for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			gmp_printf("%Zd ", matrixRes[i][j]);
+		}
+
+		printf("\n");
+	}*/
 
 	mpz_clear(res);
 	return;

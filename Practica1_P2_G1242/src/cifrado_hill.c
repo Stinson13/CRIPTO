@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     mpz_t **matrixP;
     mpz_t **matrixC;
     mpz_t **matrixK;
+	mpz_t **matrixInv;
     //mpz_t **matrixInv;
     //mpz_t** matrixRes;
     int c = 0;
@@ -158,16 +159,27 @@ int main(int argc, char *argv[]) {
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
+
     init_mpz_matrix(&matrixC, n, n);
     if (matrixC == NULL) {
 		free_mpz_matrix(matrixP, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
+
     init_mpz_matrix(&matrixK, n, n);
     if (matrixK == NULL) {
 		free_mpz_matrix(matrixP, n, n);
 		free_mpz_matrix(matrixC, n, n);
+		mpz_clear(m);
+		return EXIT_FAILURE;
+	}
+
+	init_mpz_matrix(&matrixInv, n, n);
+    if (matrixInv == NULL) {
+		free_mpz_matrix(matrixP, n, n);
+		free_mpz_matrix(matrixC, n, n);
+		free_mpz_matrix(matrixK, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
@@ -178,6 +190,11 @@ int main(int argc, char *argv[]) {
             toModM(matrixK[i][j], m);
         }
     }
+
+	if (matrixInverse(matrixK, n, m, matrixInv) < 0) {
+		printf("La matriz clave no tiene inversa.\n");
+		return -1;
+	}
 
     if (fin == NULL) {
 		fin = stdin;
@@ -210,25 +227,14 @@ int main(int argc, char *argv[]) {
 			puts(strbuf);
 			len = strlen(strbuf);
 
-			index = 0;
-
-			for (i = 0; i < n; i++) {
+			/*for (i = 0; i < n; i++) {
 				for (j = 0; j < n; j++) {
-					if (i*n + j >= len) {
-						//Zero pad matrix
-						mpz_set_ui(matrixP[i][j], 0L);
-					} else {
-						mpz_set_ui(matrixP[i][j], (long)strbuf[index]);
-						index++;
-					}
+					fprintf(fout, "%li ", mpz_get_si(matrixC[i][j]));
 				}
-			}
-
-			mulMatrixMatrix(matrixP, matrixK, matrixC, n, m);
-
-			for (i = 0; i < n; i++) {
-				fwrite(strbuf, len, sizeof(char), fout);
-			}
+			}*/
+			cipher(strbuf, strbuf, len, matrixK, n, m);
+		
+			fwrite(strbuf, len, sizeof(char), fout);
 			
 		} else {
 			// Descifrar
@@ -310,6 +316,52 @@ int main(int argc, char *argv[]) {
 
 void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
 	
+	int i;
+	int j;
+	int index = 0;
+	int	index2;
+	mpz_t** matrixP;
+	mpz_t** matrixC;
+
+	init_mpz_matrix(&matrixP, key_size, key_size);
+    if (matrixP == NULL) {
+		return;
+	}
+
+    init_mpz_matrix(&matrixC, key_size, key_size);
+    if (matrixC == NULL) {
+		free_mpz_matrix(matrixP, key_size, key_size);
+		return;
+	}
+
+	while (src[index] != '\0') {
+		for (i = 0; i < key_size; i++) {
+			for (j = 0; j < key_size; j++) {
+				if (src[index] == '\0') {
+					//Zero pad matrix
+					mpz_set_ui(matrixP[i][j], 0L);
+					//index2++;					
+
+				} else {
+					mpz_set_ui(matrixP[i][j], (long)src[index]);
+					index++;
+					//index2 = index;
+				}
+			}
+		}
+		index2++;
+
+		mulMatrixMatrix(matrixP, key, matrixC, key_size, m);
+
+		for (i = 0; i < key_size; i++) {
+			for (j = 0; j < key_size; j++) {
+				dst[(index2-1)*key_size*key_size + i*key_size + j] = mpz_get_si(matrixC[i][j]);
+			}
+		}
+	}
+
+	free_mpz_matrix(matrixP, key_size, key_size);
+	free_mpz_matrix(matrixC, key_size, key_size);
 }
 
 void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
