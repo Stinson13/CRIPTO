@@ -23,10 +23,12 @@ int getMultInverse(mpz_t a, mpz_t b, mpz_t inverse);
 void toModM(mpz_t x, mpz_t m);
 
 void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m);
-void matrixTransposed(mpz_t** matrix, int n, mpz_t** matrixTrans);
+void matrixTransposed(mpz_t** matrix, int n, mpz_t** matrixTrans, mpz_t m);
 void matrixCofactors(mpz_t** matrix, int n, mpz_t** matrixCof, mpz_t m);
 void matrixAdjoint(mpz_t** matrix, int n, mpz_t** matrixAdj, mpz_t m);
+void mulMatrixConst(mpz_t cons, mpz_t** matrix, mpz_t** matrixRes, int n);
+int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv);
+void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n, mpz_t m);
 
 mpz_t** init_mpz_matrix(mpz_t*** mat, int rows, int cols);
 void free_mpz_matrix(mpz_t** mat, int rows, int cols);
-

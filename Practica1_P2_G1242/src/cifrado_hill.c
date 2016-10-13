@@ -1,5 +1,8 @@
 #include "../includes/algoritmos.h"
 
+void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m);
+void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m);
+
 int main(int argc, char *argv[]) {
 
     if (argc < 7) {
@@ -11,12 +14,13 @@ int main(int argc, char *argv[]) {
     int n = -1;
     int i;
     int j;
+    int index;
     mpz_t m;
-    mpz_t **matrix;
-    mpz_t a;
-    mpz_t det;
-    mpz_t **matrixTrans;
-    mpz_t** matrixAdj;
+    mpz_t **matrixP;
+    mpz_t **matrixC;
+    mpz_t **matrixK;
+    //mpz_t **matrixInv;
+    //mpz_t** matrixRes;
     int c = 0;
     char filek[MAX_STR] = {0};
     char filein[MAX_STR] = {0};
@@ -148,55 +152,142 @@ int main(int argc, char *argv[]) {
 		}
         return EXIT_FAILURE;
 	}
-    
 
-    init_mpz_matrix(&matrix, n, n);
-    if (matrix == NULL) {
+    init_mpz_matrix(&matrixP, n, n);
+    if (matrixP == NULL) {
+		mpz_clear(m);
+		return EXIT_FAILURE;
+	}
+    init_mpz_matrix(&matrixC, n, n);
+    if (matrixC == NULL) {
+		free_mpz_matrix(matrixP, n, n);
+		mpz_clear(m);
+		return EXIT_FAILURE;
+	}
+    init_mpz_matrix(&matrixK, n, n);
+    if (matrixK == NULL) {
+		free_mpz_matrix(matrixP, n, n);
+		free_mpz_matrix(matrixC, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
-            mpz_inp_str(matrix[i][j], fk, 10);
-            toModM(matrix[i][j], m);
+            mpz_inp_str(matrixK[i][j], fk, 10);
+            toModM(matrixK[i][j], m);
         }
     }
 
-	mpz_init(det);
+    if (fin == NULL) {
+		fin = stdin;
+	}
+	if (fout == NULL) {
+		fout = stdout;
+	}
+	
+	char strbuf[MAX_STR];
+	int len;
+	while (!feof(fin) && !ferror(fin)) {
+		if (fin == stdin) {
+			fgets(strbuf, MAX_STR, fin);
+			if(feof(fin)) {
+				break;
+			}
+			len = strlen(strbuf);
+			if (strbuf[len-1] == '\n') {
+				len--;
+				strbuf[len] = '\0';			
+			}			
+		} else {
+			len = fread(strbuf, sizeof(char), MAX_STR, fin);
+		}
 
-    determinante(matrix, n, det, m);
-    gmp_printf("El valor del determinante de la matriz dada es = %Zd\n", det);
-    mpz_clear(det);
+		printf("Read %d bytes\n", len);
+		
+		if (modo == CIFRAR) {
+			toUpperOnly(strbuf);
+			puts(strbuf);
+			len = strlen(strbuf);
 
-    init_mpz_matrix(&matrixTrans, n, n);
-    if (matrixTrans == NULL) {
-		free_mpz_matrix(matrix, n, n);
+			index = 0;
+
+			for (i = 0; i < n; i++) {
+				for (j = 0; j < n; j++) {
+					if (i*n + j >= len) {
+						//Zero pad matrix
+						mpz_set_ui(matrixP[i][j], 0L);
+					} else {
+						mpz_set_ui(matrixP[i][j], (long)strbuf[index]);
+						index++;
+					}
+				}
+			}
+
+			mulMatrixMatrix(matrixP, matrixK, matrixC, n, m);
+
+			for (i = 0; i < n; i++) {
+				fwrite(strbuf, len, sizeof(char), fout);
+			}
+			
+		} else {
+			// Descifrar
+			printf("Descifrar\n");
+		}
+	}
+
+    /*printf("La matriz dada es (modulo m): \n");
+    for (i = 0; i < n; i++) {
+    	printf("| ");
+    	for (j = 0; j < n; j++) {
+    		gmp_printf("%Zd ", matrix[i][j]);
+    	}
+    	printf("|\n");
+    }
+
+    init_mpz_matrix(matrixInv, n, n);
+    
+    if (matrixInv == NULL) {
+		free_mpz_matrix(matrixC, n, n);
+		free_mpz_matrix(matrixP, n, n);
+		free_mpz_matrix(matrixK, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
 
-    matrixTransposed(matrix, n, matrixTrans);
+    matrixInverse(matrix, n, m, matrixInv);
 
+    printf("Su matriz inversa es: \n");
     for (i = 0; i < n; i++) {
-        gmp_printf("|%Zd %Zd %Zd|\n", matrixTrans[i][0], matrixTrans[i][1], matrixTrans[i][2]);
+    	printf("| ");
+    	for (j = 0; j < n; j++) {
+    		gmp_printf("%Zd ", matrixInv[i][j]);
+    	}
+    	printf("|\n");
     }
 
-    printf("\n");
-
-    init_mpz_matrix(&matrixAdj, n, n);
+    init_mpz_matrix(&matrixRes, n, n);
     
-    if (matrixAdj == NULL) {
-		free_mpz_matrix(matrix, n, n);
-		free_mpz_matrix(matrixTrans, n, n);
+    if (matrixRes == NULL) {
+		free_mpz_matrix(matrixC, n, n);
+		free_mpz_matrix(matrixP, n, n);
+		free_mpz_matrix(matrixK, n, n);
+		free_mpz_matrix(matrixInv, n, n);
+		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
+	
+    mulMatrixMatrix(matrix, matrixInv, matrixRes, n, m);
 
-    matrixAdjoint(matrixTrans, n, matrixAdj, m);
-
+    printf("El resultado de multiplicar la matriz dada por su inversa es: \n");
     for (i = 0; i < n; i++) {
-        gmp_printf("|%Zd %Zd %Zd|\n", matrixAdj[i][0], matrixAdj[i][1], matrixAdj[i][2]);
-    }
+    	printf("| ");
+    	for (j = 0; j < n; j++) {
+    		gmp_printf("%Zd ", matrixRes[i][j]);
+    	}
+    	printf("|\n");
+    }*/
+
 
     if (fin != NULL) {
 		fclose(fin);
@@ -207,11 +298,20 @@ int main(int argc, char *argv[]) {
 
 	fclose(fk);
 
-	free_mpz_matrix(matrix, n, n);
-	free_mpz_matrix(matrixAdj, n, n);
-	free_mpz_matrix(matrixTrans, n, n);
-
+	free_mpz_matrix(matrixP, n, n);
+	free_mpz_matrix(matrixC, n, n);
+	free_mpz_matrix(matrixK, n, n);
+	//free_mpz_matrix(matrixInv, n, n);
+	//free_mpz_matrix(matrixRes, n, n);
 	mpz_clear(m);
 	
     return EXIT_SUCCESS;
+}
+
+void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
+	
+}
+
+void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
+	
 }
