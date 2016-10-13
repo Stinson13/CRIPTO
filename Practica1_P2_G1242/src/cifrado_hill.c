@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
     int i;
     int j;
     int index;
+    int cipher_len;
     mpz_t m;
     mpz_t **matrixP;
     mpz_t **matrixC;
@@ -218,6 +219,7 @@ int main(int argc, char *argv[]) {
 			}			
 		} else {
 			len = fread(strbuf, sizeof(char), MAX_STR, fin);
+			strbuf[len]='\0';
 		}
 
 		printf("Read %d bytes\n", len);
@@ -232,9 +234,21 @@ int main(int argc, char *argv[]) {
 					fprintf(fout, "%li ", mpz_get_si(matrixC[i][j]));
 				}
 			}*/
+			
 			cipher(strbuf, strbuf, len, matrixK, n, m);
-		
-			fwrite(strbuf, len, sizeof(char), fout);
+			
+			//ceiling with respect to n*n not to lose information about the last matrix
+			//floor first
+			cipher_len = (len/(n*n))*(n*n);
+			//add n*n if len wasn't already % n*n
+			if ((len % (n*n)) != 0) {
+				cipher_len += n*n;
+			}
+			for (i=0; i< cipher_len; i++) {
+				printf("%02x\t", strbuf[i]);
+			}
+			putchar('\n');
+			fwrite(strbuf, cipher_len, sizeof(char), fout);
 			
 		} else {
 			// Descifrar
@@ -314,12 +328,13 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
 }
 
+//will write up to nearest multiple of key_size^2 greater or equal to size
 void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
 	
 	int i;
 	int j;
 	int index = 0;
-	int	index2;
+	int	index2 = 0;
 	mpz_t** matrixP;
 	mpz_t** matrixC;
 
@@ -349,21 +364,81 @@ void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) 
 				}
 			}
 		}
-		index2++;
+		
 
 		mulMatrixMatrix(matrixP, key, matrixC, key_size, m);
 
 		for (i = 0; i < key_size; i++) {
 			for (j = 0; j < key_size; j++) {
-				dst[(index2-1)*key_size*key_size + i*key_size + j] = mpz_get_si(matrixC[i][j]);
+				dst[index2 + i*key_size + j] = mpz_get_si(matrixC[i][j]);
 			}
 		}
+		
+		index2 += key_size*key_size;
 	}
 
 	free_mpz_matrix(matrixP, key_size, key_size);
 	free_mpz_matrix(matrixC, key_size, key_size);
 }
 
+//will assume there's something to read up to a multiple of key_size^2
 void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) {
+	int i;
+	int j;
+	int index = 0;
+	int	index2 = 0;
+	mpz_t** matrixP;
+	mpz_t** matrixC;
+	mpz_t** keyInv;
+
+	init_mpz_matrix(&matrixP, key_size, key_size);
+    if (matrixP == NULL) {
+		return;
+	}
+
+    init_mpz_matrix(&matrixC, key_size, key_size);
+    if (matrixC == NULL) {
+		free_mpz_matrix(matrixP, key_size, key_size);
+		return;
+	}
 	
+	init_mpz_matrix(&keyInv, key_size, key_size);
+    if (keyInv == NULL) {
+		free_mpz_matrix(matrixP, key_size, key_size);
+		free_mpz_matrix(matrixC, key_size, key_size);
+		return;
+	}
+	matrixInverse(key, key_size, m, keyInv);
+
+	while (index < size) {
+		for (i = 0; i < key_size; i++) {
+			for (j = 0; j < key_size; j++) {
+				if (index == size) {
+					//Zero pad matrix
+					mpz_set_ui(matrixP[i][j], 0L);
+					//index2++;					
+
+				} else {
+					mpz_set_ui(matrixP[i][j], (long)src[index]);
+					index++;
+					//index2 = index;
+				}
+			}
+		}
+		
+
+		mulMatrixMatrix(matrixP, key, matrixC, key_size, m);
+
+		for (i = 0; i < key_size; i++) {
+			for (j = 0; j < key_size; j++) {
+				printf("Writing at index ix:%d\tix2:%d\ti:%d\tj:%d\n",index, index2, i, j);
+				dst[index2 + i*key_size + j] = mpz_get_si(matrixC[i][j]);
+			}
+		}
+		
+		index2 += key_size*key_size;
+	}
+
+	free_mpz_matrix(matrixP, key_size, key_size);
+	free_mpz_matrix(matrixC, key_size, key_size);
 }
