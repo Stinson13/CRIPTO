@@ -391,6 +391,12 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
 
     mulMatrixConst(detInv, matrixAdj, matrixInv, n);
 
+    for (i = 0; i < n; i++) {
+    	for (j = 0; j < n; j++) {
+    		toModM(matrixInv[i][j], m);
+    	}
+    }
+
     free_mpz_matrix(matrixTrans, n, n);
 	free_mpz_matrix(matrixAdj, n, n);
 
