@@ -120,13 +120,13 @@ int main (int argc,char *argv[]) {
 				if (fout != NULL) {
 					fclose(fout);
 				}
-				return -1;
+				return EXIT_FAILURE;
 		}
 	}
 	
 	if (modo == -1 || !mpz_sgn(m) || clave == NULL) {
 		printf("Uso: %s {-C|-D} {-m |Zm|} {-k clave} [-i filein] [-o fileout]\n", argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 	
 	if (fin == NULL) {

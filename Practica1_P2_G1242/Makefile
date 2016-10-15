@@ -3,28 +3,34 @@ EXE1=afin
 EXE2=afinflujo
 EXE3=hill
 EXE4=vignere
+EXE5=kasiski
 SRC=src/
 INC= includes/
 LIB=lib/
 
-todo: $(EXE1) $(EXE2) $(EXE3) $(EXE4)
+todo: $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5)
 	
-$(EXE1): $(SRC)cifrado_afin.c $(LIB)libgmp.a
+$(EXE1): $(SRC)cifrado_afin.c $(SRC)algoritmos.c $(LIB)libgmp.a
 	$(CC) -o $@ $(SRC)cifrado_afin.c $(SRC)algoritmos.c -L. $(LIB)libgmp.a
 	
-$(EXE2): $(SRC)cifrado_afin_+.c $(LIB)libgmp.a
+$(EXE2): $(SRC)cifrado_afin_+.c $(SRC)algoritmos.c $(LIB)libgmp.a
 	$(CC) -o $@ $(SRC)cifrado_afin_+.c $(SRC)algoritmos.c -L. $(LIB)libgmp.a
 	
-$(EXE3): $(SRC)cifrado_hill.c $(LIB)libgmp.a
+$(EXE3): $(SRC)cifrado_hill.c $(SRC)algoritmos.c $(LIB)libgmp.a
 	$(CC) -o $@ $(SRC)cifrado_hill.c $(SRC)algoritmos.c -L. $(LIB)libgmp.a
-$(EXE4): $(SRC)cifrado_hill.c $(LIB)libgmp.a
+
+$(EXE4): $(SRC)cifrado_vignere.c $(SRC)algoritmos.c $(LIB)libgmp.a
 	$(CC) -o $@ $(SRC)cifrado_vignere.c $(SRC)algoritmos.c -L. $(LIB)libgmp.a
-	
-native: $(SRC)algoritmos.c $(SRC)cifrado_afin.c $(SRC)cifrado_afin_+.c $(SRC)cifrado_hill.c
+
+$(EXE5): $(SRC)kasiski.c $(SRC)algoritmos.c $(LIB)libgmp.a
+	$(CC) -o $@ $(SRC)kasiski.c $(SRC)algoritmos.c -L. $(LIB)libgmp.a	
+
+native: $(SRC)algoritmos.c $(SRC)cifrado_afin.c $(SRC)cifrado_afin_+.c $(SRC)cifrado_hill.c $(SRC)cifrado_vignere.c $(SRC)kasiski.c
 	$(CC) -g -o $(EXE1) $(SRC)cifrado_afin.c $(SRC)algoritmos.c -lgmp
 	$(CC) -g -o $(EXE2) $(SRC)cifrado_afin_+.c $(SRC)algoritmos.c -lgmp
 	$(CC) -g -o $(EXE3) $(SRC)cifrado_hill.c $(SRC)algoritmos.c -lgmp
 	$(CC) -g -o $(EXE4) $(SRC)cifrado_vignere.c $(SRC)algoritmos.c -lgmp
+	$(CC) -g -o $(EXE5) $(SRC)kasiski.c $(SRC)algoritmos.c -lgmp
 	
 clean:
-	rm -f $(EXE1) $(EXE2) $(EXE3) $(EXE4)
+	rm -f $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5)
