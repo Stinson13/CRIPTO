@@ -296,21 +296,22 @@ void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) 
 	int flag = 0;
 	int index = 0;
 	int	index2 = 0;
-	mpz_t** matrixP;
-	mpz_t** matrixC;
-
-	init_mpz_matrix(&matrixP, key_size, key_size);
-    if (matrixP == NULL) {
-		return;
-	}
-
-    init_mpz_matrix(&matrixC, key_size, key_size);
-    if (matrixC == NULL) {
-		free_mpz_matrix(matrixP, key_size, key_size);
-		return;
-	}
 
 	while (!flag) {
+		mpz_t** matrixP;
+		mpz_t** matrixC;
+
+		init_mpz_matrix(&matrixP, key_size, key_size);
+		if (matrixP == NULL) {
+			return;
+		}
+
+		init_mpz_matrix(&matrixC, key_size, key_size);
+		if (matrixC == NULL) {
+			free_mpz_matrix(matrixP, key_size, key_size);
+			return;
+		}
+
 		for (i = 0; i < key_size; i++) {
 			for (j = 0; j < key_size; j++) {
 				if (src[index] == '\0') {
@@ -336,10 +337,10 @@ void cipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m) 
 		}
 		
 		index2 += key_size*key_size;
-	}
 
-	free_mpz_matrix(matrixP, key_size, key_size);
-	free_mpz_matrix(matrixC, key_size, key_size);
+		free_mpz_matrix(matrixP, key_size, key_size);
+		free_mpz_matrix(matrixC, key_size, key_size);
+	}
 }
 
 //will assume there's something to read up to a multiple of key_size^2
@@ -348,44 +349,43 @@ void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m
 	int j;
 	int index = 0;
 	int	index2 = 0;
-	mpz_t** matrixP;
-	mpz_t** matrixC;
 	mpz_t** matrixK_Inv;
-
-	init_mpz_matrix(&matrixP, key_size, key_size);
-    if (matrixP == NULL) {
-		return;
-	}
-
-    init_mpz_matrix(&matrixC, key_size, key_size);
-    if (matrixC == NULL) {
-		free_mpz_matrix(matrixP, key_size, key_size);
-		return;
-	}
 	
 	init_mpz_matrix(&matrixK_Inv, key_size, key_size);
     if (matrixK_Inv == NULL) {
-		free_mpz_matrix(matrixP, key_size, key_size);
-		free_mpz_matrix(matrixC, key_size, key_size);
 		return;
 	}
 
-	printf("Matriz dada: \n");
+	/*printf("Matriz dada: \n");
 	for (i = 0; i < key_size; i++) {
 		gmp_printf("|%Zd %Zd %Zd|\n", key[i][0], key[i][1], key[i][2]);
-	}
+	}*/
 
 	if (matrixInverse(key, key_size, m, matrixK_Inv) < 0) {
 		printf("La matriz de claves no tiene inversa.\n");
 		return;
 	}
 
-	printf("Matriz inversa: \n");
+	/*printf("Matriz inversa: \n");
 	for (i = 0; i < key_size; i++) {
 		gmp_printf("|%Zd %Zd %Zd|\n", matrixK_Inv[i][0], matrixK_Inv[i][1], matrixK_Inv[i][2]);
-	}
+	}*/
 
 	while (index < size) {
+		mpz_t** matrixP;
+		mpz_t** matrixC;
+
+		init_mpz_matrix(&matrixP, key_size, key_size);
+	    if (matrixP == NULL) {
+			return;
+		}
+
+	    init_mpz_matrix(&matrixC, key_size, key_size);
+	    if (matrixC == NULL) {
+			free_mpz_matrix(matrixP, key_size, key_size);
+			return;
+		}
+
 		for (i = 0; i < key_size; i++) {
 			for (j = 0; j < key_size; j++) {
 				mpz_set_ui(matrixC[i][j], ((long)src[index] - 65));
@@ -403,9 +403,10 @@ void decipher(char* src, char* dst, int size, mpz_t** key, int key_size, mpz_t m
 		}
 		
 		index2 += key_size*key_size;
+
+		free_mpz_matrix(matrixP, key_size, key_size);
+		free_mpz_matrix(matrixC, key_size, key_size);
 	}
 
-	free_mpz_matrix(matrixP, key_size, key_size);
-	free_mpz_matrix(matrixC, key_size, key_size);
 	free_mpz_matrix(matrixK_Inv, key_size, key_size);
 }
