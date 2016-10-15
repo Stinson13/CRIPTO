@@ -417,19 +417,21 @@ void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n,
 		for (j = 0; j < n; j++) {
 			for (k = 0; k < n; k++) {
 				mpz_mul(res, matrix1[i][k], matrix2[k][j]);
+				//gmp_printf("%Zd * %Zd = %Zd\n", matrix1[i][k], matrix2[k][j], res);
 				mpz_add(matrixRes[i][j], matrixRes[i][j], res);
-				toModM(matrixRes[i][j], m);
+				//gmp_printf("matrixRes[%d][%d]: %Zd\n", i, j, matrixRes[i][j]);
 			}
 		}
 	}
 
-	/*for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) {
-			gmp_printf("%Zd ", matrixRes[i][j]);
-		}
+	printf("\n");
 
-		printf("\n");
-	}*/
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) {
+			//gmp_printf("matrixRes[%d][%d]: %Zd\n", i, j, matrixRes[i][j]);
+			toModM(matrixRes[i][j], m);
+		}
+	}
 
 	mpz_clear(res);
 	return;
