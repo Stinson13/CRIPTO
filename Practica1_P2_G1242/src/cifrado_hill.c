@@ -21,8 +21,6 @@ int main(int argc, char *argv[]) {
     mpz_t **matrixC;
     mpz_t **matrixK;
 	mpz_t **matrixInv;
-    //mpz_t **matrixInv;
-    //mpz_t** matrixRes;
     int c = 0;
     char filek[MAX_STR] = {0};
     char filein[MAX_STR] = {0};
@@ -222,7 +220,7 @@ int main(int argc, char *argv[]) {
 			strbuf[len]='\0';
 		}
 
-		printf("Read %d bytes\n", len);
+		printf("Read %d bytes", len);
 		
 		if (modo == CIFRAR) {
 			toUpperOnly(strbuf);
@@ -245,11 +243,11 @@ int main(int argc, char *argv[]) {
 				cipher_len += n*n;
 			}
 
-			for (i=0; i< cipher_len; i++) {
+			/*for (i=0; i< cipher_len; i++) {
 				printf("%02x\t", strbuf[i]);
-			}
+			}*/
 
-			putchar('\n');
+			//putchar('\n');
 			fwrite(strbuf, cipher_len, sizeof(char), fout);
 			
 		} else {
@@ -261,13 +259,15 @@ int main(int argc, char *argv[]) {
 				cipher_len += n*n;
 			}
 
-			for (i=0; i< cipher_len; i++) {
+			/*for (i=0; i< cipher_len; i++) {
 				printf("%02x\t", strbuf[i]);
-			}
+			}*/
 
-			putchar('\n');
+			//putchar('\n');
 			fwrite(strbuf, cipher_len, sizeof(char), fout);
 		}
+
+		printf("\n\n");
 	}
 
 

@@ -361,13 +361,29 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
 	int i;
 	int j;
 	mpz_t det;
+	mpz_t gdc;
+	mpz_t matrix_size;
 	mpz_t detInv;
 	mpz_t** matrixTrans;
 	mpz_t** matrixAdj;
 
-	mpz_inits(det, detInv, NULL);
+	mpz_inits(det, detInv, gdc, NULL);
 
 	determinante(matrix, n, det, m);
+
+	if (!mpz_cmp_si(det, 0L)) {
+		printf("Error: El determinante de la matriz de claves es 0.\n");
+		return -1;
+	}
+
+	mpz_init_set_si (matrix_size, n);
+
+	getGDC(det, matrix_size, gdc);
+
+	if (mpz_cmp_si(gdc, 1L)) {
+		printf("Error: El mcd entre el determinante de la matriz de claves y n es distinto de 1.\n");
+		return -1;
+	}
 
 	if (getMultInverse(det, m, detInv) < 0) {
 		return -1;
@@ -400,7 +416,7 @@ int matrixInverse(mpz_t** matrix, int n, mpz_t m, mpz_t** matrixInv) {
     free_mpz_matrix(matrixTrans, n, n);
 	free_mpz_matrix(matrixAdj, n, n);
 
-	mpz_clears(det, detInv, NULL);
+	mpz_clears(det, detInv, gdc, matrix_size, NULL);
 	return 0;
 }
 
