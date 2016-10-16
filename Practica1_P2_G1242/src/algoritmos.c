@@ -464,4 +464,20 @@ void free_mpz_matrix(mpz_t** mat, int rows, int cols) {
        free(mat);
 }
 
-
+double avg(int a, ...) {
+	va_list args;
+	int count = 0;
+	double sum = 0;
+	double last = 0;
+	
+	va_start(args, a);
+	
+	do {
+		last = va_arg(args, int);
+		sum += last;
+		count++;
+	} while (last != 0);
+	
+	va_end(args);
+	return sum/count;
+}
