@@ -6,7 +6,6 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdarg.h>
 
 #define MAX_STR 128
 
@@ -35,4 +34,4 @@ mpz_t** init_mpz_matrix(mpz_t*** mat, int rows, int cols);
 void free_mpz_matrix(mpz_t** mat, int rows, int cols);
 
 //Arguments will be read as ints, last argument *must* be 0
-double avg(int i, ...);
+double average(int how_many, double* vals);
