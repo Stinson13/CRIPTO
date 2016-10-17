@@ -122,13 +122,9 @@ int main (int argc,char *argv[]) {
 		
 		return EXIT_FAILURE;
 	}
-	mpz_t m;
 	
-	int i = 0, j = 0, k;
+	int i = 0;
 	int len;
-	
-	mpz_inits(distance_gdc, a, m, NULL);
-	mpz_set_ui(m, MODULO_M);
 	
 	if (fin == stdin) {
 		puts("Presione Ctrl-D para terminar el programa");
@@ -150,45 +146,53 @@ int main (int argc,char *argv[]) {
 		}
 		//save read bytes to buffer file
 		fwrite(strbuf, len, sizeof(char), ftemp);
-		
-		//get ngram if there isn't one already
-		if (ngram[0] == '\0') {
-			strncpy(ngram, strbuf, l);
-			i += l;
-		}
-		
-		//get all ngram occurences and their distances' gdc
-		for (; i < len; i++) {
-			//ngram at start of string
-			if (strstr(strbuf + i, ngram) == strbuf + i) {
-				//get gdc
-				if (mpz_sgn(distance_gdc) == 0) {
-					mpz_set_si(distance_gdc, j);
-				} else {
-					mpz_set_si(a, j);
-					getGDC(distance_gdc, a, distance_gdc);
-				}
-				
-				i += l - 1;
-				j = 0;
-			} else {
-				j++;
-			}
-		}
-		i = 0;
 	}
 	
-	unsigned int gdc = mpz_get_ui(distance_gdc);
-	
+	//now that the text is known, it has to be copied to a string for analysis
+	//+1 to leave space for terminationg '\0'
+	char* text = (char*) malloc((ftell(ftemp) + 1) * sizeof(char));
+	if (text == NULL) {
+		//TODO: free everything
+		return EXIT_FAILURE;
+	}
 	//finish all writes
 	fflush(ftemp);
 	//back to the beggining of the file
 	rewind(ftemp);
 	
+	char *p, *q;
+	
+	for(p = text; !feof(ftemp); p += len) {
+		len = fread(p, sizeof(char), MAX_STR, ftemp);
+	}
+	//write end of string
+	p[0] = '\0';
+	
+	//Find most common ngram first
+	p = most_common_ngram(l, text);
+	strncpy(ngram, p, l);
+	
+	mpz_inits(distance_gdc, a, NULL);
+	
+	for (q = p = strstr(text, ngram); q != NULL; p = q) {
+		q = strstr(p + l, ngram);
+		if (q != NULL) {
+			if (mpz_sgn(distance_gdc) == 0) {
+				mpz_set_si(distance_gdc, (q - p)/sizeof(char));
+			} else {
+				mpz_set_si(a, (q - p)/sizeof(char));
+				getGDC(distance_gdc, a, distance_gdc);
+			}
+		}
+	}
+	
+	unsigned int gdc = mpz_get_ui(distance_gdc);
+	
 	int** occurences;
 	occurences = (int**) malloc (gdc * sizeof(int*));
 	
 	double* indicesOfCoincidence;
+	int j = 0;
 	
 	if (occurences == NULL) {
 		puts("Insuficiente memoria para calcular indices de coincidencia");
@@ -210,11 +214,8 @@ int main (int argc,char *argv[]) {
 			if (gdc > 0) {
 				printf("La longitud de bloque estimada es de %u\n", gdc);
 				
-				for (i = 0; 1; i = (i + 1) % gdc) {
-					c = fgetc(ftemp);
-					if (feof(ftemp))
-						break;
-					occurences[i][c % MODULO_M]++;
+				for (i = 0; text[i] != '\0'; i++) {
+					occurences[i % gdc][text[i] % MODULO_M]++;
 				}
 				
 				//calculate index of coincidence for each row
@@ -224,13 +225,13 @@ int main (int argc,char *argv[]) {
 					for(i = 0; i < gdc; i++) {
 						for (j = 0; j < MODULO_M; j++) {
 							//ASCII equivalent, index, occurences
-							//printf("%c %i %d\t", (j + 13) % MODULO_M + 'A', j, occurences[i][j]);
+							printf("%c %i %d\t", (j + 13) % MODULO_M + 'A', j, occurences[i][j]);
 							
 							//use the approximate calculation (occurences/total)
 							//not the read index of coincidence
 							indicesOfCoincidence[i] +=
-									((double)(occurences[i][j]
-											* occurences[i][j]))
+									(double)(occurences[i][j]
+											* occurences[i][j])
 									/ (ftell(ftemp) * ftell(ftemp));
 						}
 						if (i != gdc - 1) {
@@ -238,7 +239,7 @@ int main (int argc,char *argv[]) {
 						}
 					}
 					printf("%.2lf\n", indicesOfCoincidence[gdc - 1]);
-					printf("Promedio de indices de coincidencia: %lf\n",
+					printf("Promedio de indices de coincidencia: %.2lf\n",
 							average(gdc, indicesOfCoincidence));
 					
 					free(indicesOfCoincidence);
@@ -254,8 +255,6 @@ int main (int argc,char *argv[]) {
 		}
 	}
 	
-	
-	
 	/*printf("Occurences: ");
 	for (i = 0; i < MODULO_M - 1; i++) {
 		printf("%i, ", occurences[i]);
@@ -269,7 +268,8 @@ int main (int argc,char *argv[]) {
 		fclose(fout);
 	}
 	fclose(ftemp);
+	free(text);
 	
-	mpz_clears(distance_gdc, a, m, NULL);
+	mpz_clears(distance_gdc, a, NULL);
 	return 0;
 }

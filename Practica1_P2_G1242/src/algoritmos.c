@@ -474,3 +474,55 @@ double average(int how_many, double* vals) {
 	}
 	return sum/how_many;
 }
+
+char* most_common_ngram(int ngram_length, char* string) {
+	//upper limit bounded by this formula
+	int max_table_size = 1 + (strlen(string) - ngram_length);
+	int current_table_size = 0;
+	
+	if (max_table_size < 1) {
+		return NULL;
+	}
+	
+	int* occurences = (int*)malloc(max_table_size * sizeof(int));
+	if (occurences == NULL) {
+		printf("Insuficiente memoria para encontrar ngrama mas comun\n");
+		return NULL;
+	}
+	char** ngrams = (char**)malloc(max_table_size * sizeof(char*));
+	if (ngrams == NULL) {
+		printf("Insuficiente memoria para encontrar ngrama mas comun\n");
+		free (occurences);
+		return NULL;
+	}
+	char* p;
+	int i;
+	
+	//+1 to read last element too
+	for(p = string; p < string + max_table_size + 1; p++) {
+		
+		for (i = 0; i < current_table_size; i++) {
+			if (strncmp(p, ngrams[i], ngram_length) == 0) {
+				occurences[i]++;
+				break;
+			}
+		}
+		if (i == current_table_size && i < max_table_size) {
+			ngrams[i] = p;
+			occurences[i] = 1;
+			current_table_size++;
+		}
+	}
+	
+	int max_i = 0;
+	for (i = 0; i < current_table_size; i++) {
+		if (occurences[max_i] <= occurences[i]) {
+			max_i = i;
+		}
+	}
+	
+	p = ngrams[max_i];
+	free(occurences);
+	free(ngrams);
+	return p;
+}
