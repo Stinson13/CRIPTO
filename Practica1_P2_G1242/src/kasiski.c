@@ -15,7 +15,7 @@ double english_1gram_freqs[] = {8.04, 1.54, 3.06, 3.99, 12.51, 2.30, 1.96, 5.49,
 int main (int argc,char *argv[]) {
 	
 	if (argc < 3) {
-		printf("Uso: %s {-l Ngram} [-i filein] [-o fileout]\n", argv[0]);
+		printf("Uso: %s {-l Ngram} {-a en| -a es| -a freqsfile -n |Zn|} [-i filein] [-o fileout]\n", argv[0]);
 		return 0;
 	}
 	
@@ -23,10 +23,16 @@ int main (int argc,char *argv[]) {
 	int c = 0;
 	char filein[MAX_STR] = {0};
 	char fileout[MAX_STR] = {0};
-	char* clave = NULL;
+	char filealph[MAX_STR] = {0};
+	double* alphabet_frequencies = NULL;
+	int num_chars_alphabet = 0;
+	char strbuf[MAX_STR];
 	
 	FILE* fin = NULL;
 	FILE* fout = NULL;
+	FILE* falph = NULL;
+	int n = 0;
+	char read_a_option = '\0';
 	
 	while (1) {
 		int option_index = 0;
@@ -34,9 +40,11 @@ int main (int argc,char *argv[]) {
 		   {"l", no_argument, 0, 'l'},
 		   {"i", required_argument, 0, 'i'},
 		   {"o", required_argument, 0, 'o'},
+		   {"a", required_argument, 0, 'a'},
+		   {"n", required_argument, 0, 'n'},
 		   {0, 0, 0, 0}
 		};
-		c = getopt_long(argc, argv, "+l:i:o:",
+		c = getopt_long(argc, argv, "+l:a:n:i:o:",
 			long_options, &option_index);
 		if (c < 0)
 			break;
@@ -44,6 +52,19 @@ int main (int argc,char *argv[]) {
 		switch (c) {
 			case 'l':
 				l = atoi(optarg);
+				break;
+			case 'a':
+				read_a_option = !read_a_option;
+				if (strcmp("en", optarg) == 0) {
+					alphabet_frequencies = english_1gram_freqs;
+				} else if (strcmp("es", optarg) == 0) {
+					alphabet_frequencies = spanish_1gram_freqs;
+				} else {
+					strcpy(filealph, optarg);
+				}
+				break;
+			case 'n':
+				n = atoi(optarg);
 				break;
 			case 'i':
 				strcpy(filein, optarg);
@@ -70,7 +91,7 @@ int main (int argc,char *argv[]) {
 				}
 				break;
 			default:
-				printf("Uso: %s {-l Ngram} [-i filein] [-o fileout]\n", argv[0]);
+				printf("Uso: %s {-l Ngram} {-a en| -a es| -a freqsfile -n |Zn|} [-i filein] [-o fileout]\n", argv[0]);
 				if (fin != NULL) {
 					fclose(fin);
 				}
@@ -79,6 +100,78 @@ int main (int argc,char *argv[]) {
 				}
 				return EXIT_FAILURE;
 		}
+	}
+	
+	if (read_a_option == '\0') {
+		printf("Uso: %s {-l Ngram} {-a en| -a es| -a freqsfile -n |Zn|} [-i filein] [-o fileout]\n", argv[0]);
+		if (fin != NULL) {
+			fclose(fin);
+		}
+		if (fout != NULL) {
+			fclose(fout);
+		}
+		return EXIT_FAILURE;
+	}
+	
+	int i = 0;
+	
+	if (alphabet_frequencies != english_1gram_freqs
+			&& alphabet_frequencies != spanish_1gram_freqs) {
+		if (n < 1) {
+			printf("n debe ser positivo\n");
+			if (fin != NULL) {
+				fclose(fin);
+			}
+			if (fout != NULL) {
+				fclose(fout);
+			}
+			return EXIT_FAILURE;
+		} else {
+			falph = fopen(optarg, "r");
+			if (falph == NULL) {
+				printf("Error al abrir %s para leer\n", optarg);
+				if (fin != NULL) {
+					fclose(fin);
+				}
+				if (fout != NULL) {
+					fclose(fout);
+				}
+				return EXIT_FAILURE;
+			}
+			
+			alphabet_frequencies = (double*) malloc(n * sizeof(double));
+			if (alphabet_frequencies == NULL) {
+				printf("Insuficiente memoria para guardar tabla de frecuencias\n");
+				if (fin != NULL) {
+					fclose(fin);
+				}
+				if (fout != NULL) {
+					fclose(fout);
+				}
+				fclose(falph);
+				return EXIT_FAILURE;
+			}
+			for (i = 0; !feof(falph) && i < n; i++) {
+				fgets(strbuf, MAX_STR, falph);
+				alphabet_frequencies[i] = atof(strbuf);
+			}
+			if (i != n) {
+				printf("Tabla incompleta, faltan %d elementos\n", n-i);
+				
+				if (fin != NULL) {
+					fclose(fin);
+				}
+				if (fout != NULL) {
+					fclose(fout);
+				}
+				fclose(falph);
+				return EXIT_FAILURE;
+			}
+			fclose(falph);
+			falph = NULL;
+		}
+	} else {
+		n = MODULO_M;
 	}
 	
 	if (l < 1) {
@@ -99,7 +192,6 @@ int main (int argc,char *argv[]) {
 		fout = stdout;
 	}
 	
-	char strbuf[MAX_STR];
 	char ngram[MAX_STR];
 	memset(ngram, 0, MAX_STR * sizeof(char));
 	
@@ -123,7 +215,6 @@ int main (int argc,char *argv[]) {
 		return EXIT_FAILURE;
 	}
 	
-	int i = 0;
 	int len;
 	
 	if (fin == stdin) {
@@ -192,13 +283,15 @@ int main (int argc,char *argv[]) {
 	occurences = (int**) malloc (gdc * sizeof(int*));
 	
 	double* indicesOfCoincidence;
-	int j = 0;
+	double* cmpIoC;
+	int j = 0, k = 0;
+	char* clave = NULL;
 	
 	if (occurences == NULL) {
 		puts("Insuficiente memoria para calcular indices de coincidencia");
 	} else {
 		for (i = 0; i < gdc; i++) {
-			occurences[i] = (int*) calloc (MODULO_M, sizeof(int));
+			occurences[i] = (int*) calloc (n, sizeof(int));
 			if (occurences[i] == NULL) {
 				puts("Insuficiente memoria para calcular indices de coincidencia");
 				for (i--; i > -1; i--) {
@@ -215,7 +308,7 @@ int main (int argc,char *argv[]) {
 				printf("La longitud de bloque estimada es de %u\n", gdc);
 				
 				for (i = 0; text[i] != '\0'; i++) {
-					occurences[i % gdc][text[i] % MODULO_M]++;
+					occurences[i % gdc][text[i] % n]++;
 				}
 				
 				//calculate index of coincidence for each row
@@ -223,9 +316,9 @@ int main (int argc,char *argv[]) {
 				if (indicesOfCoincidence != NULL) {
 					printf("Indices de coincidencia: ");
 					for(i = 0; i < gdc; i++) {
-						for (j = 0; j < MODULO_M; j++) {
+						for (j = 0; j < n; j++) {
 							//ASCII equivalent, index, occurences
-							printf("%c %i %d\t", (j + 13) % MODULO_M + 'A', j, occurences[i][j]);
+							//printf("%c %i %d\t", (j + 13) % n + 'A', j, occurences[i][j]);
 							
 							//use the approximate calculation (occurences/total)
 							//not the read index of coincidence
@@ -242,6 +335,40 @@ int main (int argc,char *argv[]) {
 					printf("Promedio de indices de coincidencia: %.2lf\n",
 							average(gdc, indicesOfCoincidence));
 					
+					clave = (char*)calloc(gdc + 1, sizeof(char));
+					if (clave == NULL) {
+						printf("Insuficiente memoria para guardar la clave estimada");
+					} else {
+						cmpIoC = (double*)calloc(gdc, sizeof(double));
+						if (cmpIoC == NULL) {
+							printf("Insuficiente memoria para guardar\
+ una tabla de indices de coincidencia\n");
+							free(clave);
+						} else {
+							for(i = 0; i < gdc; i++) {
+								for (j = 1; j < n; j++) {
+									for (k = 0; k < n; k++) {
+										//index of coincidence for character
+										//shifted j positions
+										cmpIoC[i] +=
+											(double)(occurences[i][(j + k) % n]
+													* occurences[i][k])
+											/ (ftell(ftemp) * ftell(ftemp));
+									}
+									if (indicesOfCoincidence[i] < cmpIoC[i]) {
+										indicesOfCoincidence[i] = cmpIoC[i];
+										//ASCII equivalent
+										clave[i] = (j + 13) % n + 'A';		
+									}
+								}
+							}
+							clave[gdc] = '\0';
+							printf("La clave es %s\n", clave);
+							free(clave);
+							free(cmpIoC);
+						}
+					}
+					
 					free(indicesOfCoincidence);
 				}
 			} else {
@@ -256,10 +383,15 @@ int main (int argc,char *argv[]) {
 	}
 	
 	/*printf("Occurences: ");
-	for (i = 0; i < MODULO_M - 1; i++) {
+	for (i = 0; i < n - 1; i++) {
 		printf("%i, ", occurences[i]);
 	}
 	printf("%i\n", occurences[i]);*/
+	
+	if (alphabet_frequencies != english_1gram_freqs
+			&& alphabet_frequencies != spanish_1gram_freqs) {
+		free(alphabet_frequencies);
+	}
 	
 	if (fin != stdin) {
 		fclose(fin);

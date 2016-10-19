@@ -154,11 +154,11 @@ int main (int argc,char *argv[]) {
 			len = fread(strbuf, sizeof(char), MAX_STR, fin);
 		}
 
-		printf("Read %d bytes\n", len);
+		//printf("Read %d bytes\n", len);
 		
 		if (modo == CIFRAR) {
 			toUpperOnly(strbuf);
-			puts(strbuf);
+			//puts(strbuf);
 			len = strlen(strbuf);
 			//printf("Texto empieza por %hhx\n", strbuf[0]);
 			cipher(strbuf, strbuf, len, clave, m);
@@ -195,7 +195,7 @@ void cipher(char* src, char* dst, int size, char* clave, mpz_t m) {
 		mpz_set_si(k, (long)(clave[i%n]));	//read k
 		mpz_add(y, x, k);					//y = x + k
 		toModM(y, m);						//y = x + k % m
-		gmp_printf ("y = %Zd\n", y);
+		//gmp_printf ("y = %Zd\n", y);
 		dst[i] = (char)(mpz_get_si(y));		//write y
 	}
 	
