@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #define MAX_STR 128
 
@@ -39,3 +40,9 @@ void mulMatrixMatrix(mpz_t** matrix1, mpz_t** matrix2, mpz_t** matrixRes, int n,
 
 mpz_t** init_mpz_matrix(mpz_t*** mat, int rows, int cols);
 void free_mpz_matrix(mpz_t** mat, int rows, int cols);
+
+// permutation functions
+int getRandomLessN(int n);
+char* makePermutation(int n);
+//Retorno: un array de tamaño arraySize - 1 con los elementos de array eliminando el elemento numero n
+char* fitArray(char* array, int n, int arraySize);
