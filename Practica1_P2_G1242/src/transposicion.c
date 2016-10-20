@@ -148,13 +148,18 @@ int main(int argc, char *argv[]) {
 			strbuf[len]='\0';
 		}
 
-		printf("Read %d bytes", len);
+		printf("Read %d bytes\n", len);
 		
 		if (modo == CIFRAR) {
-			
+			toUpperOnly(strbuf);
+
 			char* encryption = cipher(strbuf, permutation);
+			if (!encryption) {
+				printf("Error al cifrar el texto plano.\n");
+				return EXIT_FAILURE;
+			}
 			strcpy(strbuf, encryption);
-			fwrite(strbuf, len, sizeof(char), fout);
+			fprintf(fout, "%s\n", strbuf);
 			free(encryption);
 			
 		} else {
@@ -163,7 +168,7 @@ int main(int argc, char *argv[]) {
 			//fwrite(strbuf, cipher_len, sizeof(char), fout);
 		}
 
-		printf("\n");
+		//printf("\n");
 	}
 
 	if (fin != NULL) {
@@ -206,34 +211,45 @@ char* cipher(char* src, char* permutation) {
 
 	rest = (len - n);
 
-	if (rest < 0 || !rest) {
+	if (rest < 0) {
+		for (i = len; i < n; i++) {
+			memcpy(&src[i], "A", sizeof(char));
+		}
+	}
+
+	if (!rest) {
 		while (index1 < len) {
 			for (i = 0; i < n; i++, index1++) {
-				auxSrc[(int)permutation[i] - 1] = src[i];
+				memcpy(&auxSrc[(int)permutation[i] - 1], &src[i], sizeof(char));
 			}
 
 			for (i = 0; i < n; i++, index2++) {
-				dst[index2] = auxSrc[i];
+				memcpy(&dst[index2], &auxSrc[i], sizeof(char));
 			}
 		}
 
-	} else if (rest > 0) {
-		while ((index1 + rest) < len) {
+	} else if (rest < 0) {
+		for (i = 0; i < n; i++) {
+			memcpy(&dst[(int)permutation[i] - 1], &src[i], sizeof(char));
+		}
+
+	} else {
+		while (((index1 - 1) + rest) < len) {
 			for (i = 0; i < n; i++, index1++) {
-				auxSrc[(int)permutation[i] - 1] = src[i];
+				memcpy(&auxSrc[(int)permutation[i] - 1], &src[i], sizeof(char));
 			}
 
 			for (i = 0; i < n; i++, index2++) {
-				dst[index2] = auxSrc[i];
+				memcpy(&dst[index2], &auxSrc[i], sizeof(char));
 			}
 		}
 
-		for (i = 0; index1 < len; i++, index1++) {
-			auxSrc[(int)permutation[i] - 1] = src[i];
+		for (i = 0; index1 < (len + 1); i++, index1++) {
+			memcpy(&auxSrc[(int)permutation[i] - 1], &src[index1 - 1], sizeof(char));
 		}
 
 		for (i = 0; i < rest; i++, index2++) {
-			dst[index2] = auxSrc[i];
+			memcpy(&dst[index2], &auxSrc[i], sizeof(char));
 		}
 	}
 

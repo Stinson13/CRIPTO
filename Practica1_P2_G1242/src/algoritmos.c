@@ -532,8 +532,11 @@ char* most_common_ngram(int ngram_length, char* string) {
 
 int getRandomLessN(int n) {
 
-	srand(time(NULL));
-	return (rand() % n + 1);
+	struct timeval seed;
+	gettimeofday(&seed, NULL);
+
+	srand(seed.tv_usec);
+	return (rand() % n);
 }
 
 char* makePermutation(int n) {
@@ -541,7 +544,7 @@ char* makePermutation(int n) {
 	char* permutation;
 	char* auxPerm;
 	int i;
-	int j = 5;
+	int j = n;
 	int randomValue;
 
 	permutation = (char *) malloc (n * sizeof(char));
@@ -557,43 +560,31 @@ char* makePermutation(int n) {
 
 	for (i = 0; i < n; i++) {
 		auxPerm[i] = i + 1;
-		printf("%d ", auxPerm[i]);
 	}
 
 	for (i = 0; i < n; i++) {
 		randomValue = getRandomLessN(j);
 
-		permutation[i] = auxPerm[randomValue];
+		memcpy(&permutation[i], &auxPerm[randomValue], sizeof(char));
 
-		free(auxPerm);
-		auxPerm = fitArray(auxPerm, randomValue, n);
+		fitArray(auxPerm, randomValue, n);
+
+		j--;
 	}
 
 	free(auxPerm);
 	return permutation;
 }
 
-char* fitArray(char* array, int n, int arraySize) {
-
-	if (!array) {
-		return NULL;
-	}
+void fitArray(char* array, int posEle, int arraySize) {
 
 	int i;
-	int j = 0; 
-	char* auxArray;
+	int j = 0;
 
-	auxArray = (char *) malloc ((arraySize - 1) * sizeof(char));
-	if (!auxArray) {
-		return NULL;
+	for (i = (posEle + 1); i < arraySize; i++) {
+		memcpy(&array[i - 1], &array[i], sizeof(char));
+		j++;
 	}
 
-	for (i = 0; i < arraySize; i++) {
-		if (i != n) {
-			auxArray[j] = array[i];
-			j++;
-		}
-	}
-
-	return auxArray;
+	return;
 }

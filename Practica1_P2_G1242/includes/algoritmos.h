@@ -45,5 +45,4 @@ void free_mpz_matrix(mpz_t** mat, int rows, int cols);
 // permutation functions
 int getRandomLessN(int n);
 char* makePermutation(int n);
-//Retorno: un array de tamaño arraySize - 1 con los elementos de array eliminando el elemento numero n
-char* fitArray(char* array, int n, int arraySize);
+void fitArray(char* array, int posEle, int arraySize);
