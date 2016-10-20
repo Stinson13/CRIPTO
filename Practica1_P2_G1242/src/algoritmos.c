@@ -529,3 +529,71 @@ char* most_common_ngram(int ngram_length, char* string) {
 	free(ngrams);
 	return p;
 }
+
+int getRandomLessN(int n) {
+
+	srand(time(NULL));
+	return (rand() % n + 1);
+}
+
+char* makePermutation(int n) {
+
+	char* permutation;
+	char* auxPerm;
+	int i;
+	int j = 5;
+	int randomValue;
+
+	permutation = (char *) malloc (n * sizeof(char));
+	if (!permutation) {
+		return NULL;
+	}
+
+	auxPerm = (char *) malloc (n * sizeof(char));
+	if (!auxPerm) {
+		free(permutation);
+		return NULL;
+	}
+
+	for (i = 0; i < n; i++) {
+		auxPerm[i] = i + 1;
+		printf("%d ", auxPerm[i]);
+	}
+
+	for (i = 0; i < n; i++) {
+		randomValue = getRandomLessN(j);
+
+		permutation[i] = auxPerm[randomValue];
+
+		free(auxPerm);
+		auxPerm = fitArray(auxPerm, randomValue, n);
+	}
+
+	free(auxPerm);
+	return permutation;
+}
+
+char* fitArray(char* array, int n, int arraySize) {
+
+	if (!array) {
+		return NULL;
+	}
+
+	int i;
+	int j = 0; 
+	char* auxArray;
+
+	auxArray = (char *) malloc ((arraySize - 1) * sizeof(char));
+	if (!auxArray) {
+		return NULL;
+	}
+
+	for (i = 0; i < arraySize; i++) {
+		if (i != n) {
+			auxArray[j] = array[i];
+			j++;
+		}
+	}
+
+	return auxArray;
+}
