@@ -12,7 +12,7 @@ int main (int argc,char *argv[]) {
 	
 	if (argc < 5) {
 		printf("Uso: %s {-C|-D} {-m |Zm|} {-k clave} [-i filein] [-o fileout]\n", argv[0]);
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
 	int modo = -1;
@@ -126,6 +126,16 @@ int main (int argc,char *argv[]) {
 	
 	if (modo == -1 || !mpz_sgn(m) || clave == NULL) {
 		printf("Uso: %s {-C|-D} {-m |Zm|} {-k clave} [-i filein] [-o fileout]\n", argv[0]);
+		if (clave != NULL) {
+			free(clave);
+		}
+		
+		if (fin != NULL) {
+			fclose(fin);
+		}
+		if (fout != NULL) {
+			fclose(fout);
+		}
 		return EXIT_FAILURE;
 	}
 	
@@ -139,6 +149,7 @@ int main (int argc,char *argv[]) {
 	char strbuf[MAX_STR];
 	int len;
 	int i;
+	
 	while (!feof(fin) && !ferror(fin)) {
 		if (fin == stdin) {
 			fgets(strbuf, MAX_STR, fin);
@@ -153,13 +164,12 @@ int main (int argc,char *argv[]) {
 		} else {
 			len = fread(strbuf, sizeof(char), MAX_STR, fin);
 		}
-
 		//printf("Read %d bytes\n", len);
 		
 		if (modo == CIFRAR) {
 			toUpperOnly(strbuf);
 			//puts(strbuf);
-			len = strlen(strbuf);
+			//len = strlen(strbuf);
 			//printf("Texto empieza por %hhx\n", strbuf[0]);
 			cipher(strbuf, strbuf, len, clave, m);
 			//printf("Cifrado empieza por %hhx\n", strbuf[0]);
@@ -178,7 +188,8 @@ int main (int argc,char *argv[]) {
 		fclose(fout);
 	}
 	mpz_clear (m);
-	return 0;
+	free(clave);
+	return EXIT_SUCCESS;
 }
 
 void cipher(char* src, char* dst, int size, char* clave, mpz_t m) {
@@ -191,12 +202,12 @@ void cipher(char* src, char* dst, int size, char* clave, mpz_t m) {
 	mpz_inits(x, k, y, NULL);
 	
 	for (i = 0; i < size; i++) {
-		mpz_set_si(x, (long)(src[i]));		//read x
-		mpz_set_si(k, (long)(clave[i%n]));	//read k
-		mpz_add(y, x, k);					//y = x + k
-		toModM(y, m);						//y = x + k % m
+		mpz_set_si(x, (long)(src[i]) - 'A');		//read x
+		mpz_set_si(k, (long)(clave[i%n]));			//read k
+		mpz_add(y, x, k);							//y = x + k
+		toModM(y, m);								//y = x + k % m
 		//gmp_printf ("y = %Zd\n", y);
-		dst[i] = (char)(mpz_get_si(y));		//write y
+		dst[i] = (char)(mpz_get_si(y) + 'A');		//write y
 	}
 	
 	mpz_clears(x, k, y, NULL);
@@ -212,12 +223,11 @@ void decipher(char* src, char* dst, int size, char* clave, mpz_t m) {
 	mpz_inits(x, k, y, NULL);
 	
 	for (i = 0; i < size; i++) {
-		mpz_set_si(y, (long)(src[i]));		//read y
-		mpz_set_si(k, (long)(clave[i%n]));	//read k
-		mpz_sub(x, y, k);					//x = y-k
-		toModM(x, m);						//x = y - k % m
-		
-		dst[i] = (char)(mpz_get_si(x));		//write x
+		mpz_set_si(y, (long)(src[i]) - 'A');		//read y
+		mpz_set_si(k, (long)(clave[i%n]));			//read k
+		mpz_sub(x, y, k);							//x = y-k
+		toModM(x, m);								//x = y - k % m
+		dst[i] = (char)(mpz_get_si(x) + 'A');		//write x
 	}
 	
 	mpz_clears(x, k, y, NULL);

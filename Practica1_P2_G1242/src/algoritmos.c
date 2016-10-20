@@ -129,9 +129,10 @@ void toUpperOnly(char* src) {
 
 void toModM(mpz_t x, mpz_t m) {
 	mpz_t q;
-	mpz_init(q);
+	mpz_t r;
+	mpz_inits(q, r, NULL);
 	
-	mpz_tdiv_q(q, x, m);
+	mpz_tdiv_qr(q, r, x, m);
 	
 	if (mpz_sgn(x) < 0) {
 		//|x| < m
@@ -140,7 +141,9 @@ void toModM(mpz_t x, mpz_t m) {
 			mpz_add(x, x, m);
 		} else {
 			mpz_abs(q, q);
-			mpz_add_ui(q, q, 1L);
+			if (mpz_sgn(r) != 0) {
+				mpz_add_ui(q, q, 1L);
+			}
 			//gmp_printf(" (2) %Zd %% %Zd = %Zd + %Zd * %Zd\n", x, m, x, q, m);
 			mpz_mul(q, m, q);
 			mpz_add(x, x, q);
@@ -152,7 +155,7 @@ void toModM(mpz_t x, mpz_t m) {
 	}
 	//else x is already % m
 	
-	mpz_clear(q);
+	mpz_clears(q, r, NULL);
 }
 
 void determinante(mpz_t** matrix, int n, mpz_t det, mpz_t m) {

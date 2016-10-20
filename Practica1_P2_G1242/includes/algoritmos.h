@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #define MAX_STR 128
 
