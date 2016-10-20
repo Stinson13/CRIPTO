@@ -122,7 +122,7 @@ int main (int argc,char *argv[]) {
 		} else {
 			falph = fopen(filealph, "r");
 			if (falph == NULL) {
-				printf("Error al abrir %s para leer\n", falph);
+				printf("Error al abrir %s para leer\n", filealph);
 				if (fin != NULL) {
 					fclose(fin);
 				}
@@ -254,34 +254,49 @@ int main (int argc,char *argv[]) {
 	
 	int j = 0, k = 0;
 	int block_size = 0;
+	int total_occurences = 0;
 	double avgIoC = 0;
 	double diff = 1;
 	
-	int* occurences = (int*) calloc(n, sizeof(int));
+	int* occurences = (int*) malloc(n * sizeof(int));
 	if (occurences != NULL) {
 		//for each possible block size
-		for (i = 1, len = ftell(ftemp); i < len; i++, avg = 0) {
+		for (i = 1, len = ftell(ftemp); i < len; i++, avgIoC = 0) {
 			//for each element index within the block
 			for (j = 0; j < i; j++) {
-				//calculate the index of coincidence
+				memset(occurences, 0, n * sizeof(int));
+				//add the index of coincidence to accumulator
 				for (k = j; k < len; k += i) {
-					occurences[k%n]++; 
+					occurences[text[k]%n]++; 
 				}
-				memset(occurences, 0, n);
 				for (k = 0; k < n; k++) {
-					avgIoC =+ (occurences[k] * occurences[k]) / (*******************);
+					//printf("Occurences: %i\tblocks: %i\n", occurences[k], (j < (len%i) ? (len/i + 1): (len/i)));
+					if (occurences[k] > 1) {
+						if (j < len % i) {
+							avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / ((len/i + 1) * (len/i));
+						} else if (len/i > 2) {
+							avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / (len/i * (len/i-1));
+						}
+					}
 				}
 			}
+			//find average index of coincidence
 			avgIoC /= i;
+			printf("Avg is %lf, diff is %lf for block size %i\n", avgIoC, fabs(baseIoC - avgIoC), i);
 			if (fabs(baseIoC - avgIoC) < diff) {
 				block_size = i;
 				diff = fabs(baseIoC - avgIoC);
 			}
-			
 		}
 		free(occurences);
 	} else {
 		printf("Insuficiente memoria para la tabla de frecuencias\n");
+	}
+	
+	if (block_size > 0) {
+		printf("El tamano de bloque es %d\n", block_size);
+	} else {
+		puts("El tamano de bloque no pudo ser determinado");
 	}
 	
 	if (alphabet_frequencies != english_1gram_freqs

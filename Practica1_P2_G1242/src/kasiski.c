@@ -3,7 +3,7 @@
 
 //Porcentajes desde la A a la Z
 double spanish_1gram_freqs[] = {11.96, 0.92, 2.92, 6.87, 16.78, 0.52, 0.73, 0.89, 4.15, 0.3, 0, 8.37, 2.12, 7.01, 8.69, 2.77, 1.53, 4.94, 7.88, 3.31, 4.8, 0.39, 0, 0.06, 1.54, 0.15};
-double english_1gram_freqs[] = {8.04, 1.54, 3.06, 3.99, 12.51, 2.30, 1.96, 5.49, 7.26, 0.16, 0.67, 4.14, 2.53, 7.09, 7.60, 2.00, 0.11, 6.12, 6.54, 9.25, 2.71, 0.99, 1.92, 0.19, 1.73, 0.19};
+double english_1gram_freqs[] = {8.04, 1.13154, 3.06, 3.99, 12.51, 2.30, 1.96, 5.49, 7.26, 0.16, 0.67, 4.14, 2.53, 7.09, 7.60, 2.00, 0.11, 6.12, 6.54, 9.25, 2.71, 0.99, 1.92, 0.19, 1.73, 0.19};
 
 
 
@@ -128,7 +128,7 @@ int main (int argc,char *argv[]) {
 		} else {
 			falph = fopen(filealph, "r");
 			if (falph == NULL) {
-				printf("Error al abrir %s para leer\n", falph);
+				printf("Error al abrir %s para leer\n", filealph);
 				if (fin != NULL) {
 					fclose(fin);
 				}
