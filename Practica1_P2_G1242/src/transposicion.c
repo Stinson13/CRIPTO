@@ -1,6 +1,9 @@
 #include "../includes/algoritmos.h"
 
-char* cipher(char* src, char* permutation);
+#define NOM_FILEPERM "permutacion.dat"
+
+void cipher(char* src, char* dst, char* permutation);
+void descipher(char* src, char* dst, char* permutation);
 
 int main(int argc, char *argv[]) {
 
@@ -12,13 +15,17 @@ int main(int argc, char *argv[]) {
     int modo = -1;
     int c = 0;
     int n = -1;					// Tamaño permutacion
+    int len;					// Tamaño texto a cifrar
     int i;
+    char* auxPerm;
+    char* strbuf;
     char* permutation = NULL;
     char filein[MAX_STR] = {0};
     char fileout[MAX_STR] = {0};
 
     FILE* fin = NULL;
     FILE* fout = NULL;
+    FILE* fperm = NULL;
 
     while (1) {
         int option_index = 0;
@@ -47,7 +54,19 @@ int main(int argc, char *argv[]) {
                 modo = DESCIFRAR;
                 break;
             case 'p':
-            	// TODO: leer cadena entrada (permutacion)
+            	permutation = (char *) calloc (MAX_STR, sizeof(char));
+				if (!permutation) {
+					return EXIT_FAILURE;
+				}
+
+				auxPerm = strtok(optarg, " ");
+				//memcpy(&permutation[0], atoi(auxPerm), sizeof(char));
+				permutation[0] = atoi(auxPerm);
+
+				for (i = 1; (auxPerm = strtok(NULL, " ")) != NULL; i++) {
+					//memcpy(&permutation[i], auxPerm, sizeof(char));
+					permutation[i] = atoi(auxPerm);
+				}
             	break;
             case 'n':
             	n = atoi(optarg);
@@ -56,21 +75,34 @@ int main(int argc, char *argv[]) {
             		printf("El valor de 'n' debe ser mayor o igual a 1.\n");
             		return EXIT_FAILURE;
             	}
+            	permutation = (char *) calloc ((n + 1), sizeof(char));
+				if (!permutation) {
+					return EXIT_FAILURE;
+				}
 
-            	permutation = makePermutation(n);
-
+            	makePermutation(permutation, n);
             	if (!permutation) {
             		printf("Error al crear una nueva permutacion.\n");
             		return EXIT_FAILURE;
             	}
 
-            	//TODO: imprimir matriz en fichero tambien
-            	printf("La permutacion aleatoria es: '");
-            	for (i = 0; i < n; i++) {
-            		printf("%d", permutation[i]);
-            	}
+            	fperm = fopen(NOM_FILEPERM, "w");
+            	if (fperm == NULL) {
+                    printf("Error al abrir %s para leer\n", NOM_FILEPERM);
+                    if (fout != NULL) {
+						fclose(fout);
+					}
+					if (fin != NULL) {
+						fclose(fout);
+					}
+                    return EXIT_FAILURE;
+                }
 
-            	printf("'\n");
+                for (i = 0; i < n; i++) {
+                	fprintf(fperm, "%d ", (int)permutation[i]);
+                }
+
+                fclose(fperm);
             	break;
             case 'i':
                 strcpy(filein, optarg);
@@ -130,19 +162,26 @@ int main(int argc, char *argv[]) {
 		fout = stdout;
 	}
 
-	char strbuf[MAX_STR];
-	int len;				// Tamaño texto a cifrar
 	while (!feof(fin) && !ferror(fin)) {
+		strbuf = (char *) calloc (MAX_STR, sizeof(char));
+		if (!strbuf) {
+			printf("Error al reservar memoria.\n");
+			return EXIT_FAILURE;
+		}
+
 		if (fin == stdin) {
 			fgets(strbuf, MAX_STR, fin);
 			if(feof(fin)) {
 				break;
 			}
+
 			len = strlen(strbuf);
+
 			if (strbuf[len-1] == '\n') {
 				len--;
 				strbuf[len] = '\0';			
-			}			
+			}
+
 		} else {
 			len = fread(strbuf, sizeof(char), MAX_STR, fin);
 			strbuf[len]='\0';
@@ -153,21 +192,26 @@ int main(int argc, char *argv[]) {
 		if (modo == CIFRAR) {
 			toUpperOnly(strbuf);
 
-			char* encryption = cipher(strbuf, permutation);
-			if (!encryption) {
+			cipher(strbuf, strbuf, permutation);
+			if (!strbuf) {
 				printf("Error al cifrar el texto plano.\n");
 				return EXIT_FAILURE;
 			}
-			strcpy(strbuf, encryption);
+
 			fprintf(fout, "%s\n", strbuf);
-			free(encryption);
 			
 		} else {
 			
-			//TODO: descifrado
-			//fwrite(strbuf, cipher_len, sizeof(char), fout);
+			descipher(strbuf, strbuf, permutation);
+			if (!strbuf) {
+				printf("Error al cifrar el texto plano.\n");
+				return EXIT_FAILURE;
+			}
+
+			fprintf(fout, "%s", strbuf);
 		}
 
+		free(strbuf);
 		//printf("\n");
 	}
 
@@ -183,77 +227,102 @@ int main(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-char* cipher(char* src, char* permutation) {
+void cipher(char* src, char* dst, char* permutation) {
 
-	if (!src || !permutation) {
-		return NULL;
+	if (!src || !dst || !permutation) {
+		return;
 	}
 
 	int i;
 	int rest;
-	int index1 = 1;
+	int index1 = 0;
+	int index2 = 0;
+	int len = strlen(src);
+	int n = strlen(permutation);
+	int auxN = strlen(permutation);
+	char* auxSrc;
+
+	auxSrc = (char *) calloc ((n + 1), sizeof(char));
+	if (!auxSrc) {
+		dst = NULL;
+		return;
+	}
+
+	// Añadimos padding si es necesario
+	if ((len%n)) {
+		rest = (len - n);
+
+		if (rest < 0) {
+			for (i = len; i < n; i++) {
+				memcpy(&src[i], "A", sizeof(char));
+			}
+
+		} else if (rest > 0) {
+			rest = len / n;
+			rest = (rest * n) + n;
+
+			for (i = len; i < rest; i++) {
+				memcpy(&src[i], "A", sizeof(char));
+			}
+		}
+	}
+
+	// Tamaño de la cadena origen tras el padding
+	len = strlen(src);
+
+	while (index1 < len) {
+		for (i = 0; index1 < auxN; i++, index1++){
+			memcpy(&auxSrc[(int)permutation[i] - 1], &src[index1], sizeof(char));
+		}
+
+		for (i = 0; i < n; i++, index2++) {
+			memcpy(&dst[index2], &auxSrc[i], sizeof(char));
+		}
+
+		if (auxN < len) {
+			auxN += n;
+		}
+	}
+
+	memcpy(&dst[index2], "\0", sizeof(char));
+
+	free(auxSrc);
+	return;
+}
+
+void descipher(char* src, char* dst, char* permutation) {
+
+	if (!src || !dst || !permutation) {
+		return;
+	}
+
+	int i;
+	int rest;
+	int index1 = 0;
 	int index2 = 0;
 	int len = strlen(src);
 	int n = strlen(permutation);
 	char* auxSrc;
-	char* dst;
 
-	auxSrc = (char *) malloc (n * sizeof(char));
+	auxSrc = (char *) calloc ((n + 1), sizeof(char));
 	if (!auxSrc) {
-		return NULL;
+		dst = NULL;
+		return;
 	}
 
-	dst = (char *) malloc (len * sizeof(char));
-	if (!dst) {
-		free(auxSrc);
-		return NULL;
-	}
+	while (index1 < len) {
+		for (i = 0; i < n; i++, index1++) {
+			memcpy(&auxSrc[i], &src[index1], sizeof(char));
+		}
 
-	rest = (len - n);
-
-	if (rest < 0) {
-		for (i = len; i < n; i++) {
-			memcpy(&src[i], "A", sizeof(char));
+		for (i = 0; i < n; i++, index2++){
+			memcpy(&dst[index2], &auxSrc[(int)permutation[i] - 1], sizeof(char));
 		}
 	}
 
-	if (!rest) {
-		while (index1 < len) {
-			for (i = 0; i < n; i++, index1++) {
-				memcpy(&auxSrc[(int)permutation[i] - 1], &src[i], sizeof(char));
-			}
-
-			for (i = 0; i < n; i++, index2++) {
-				memcpy(&dst[index2], &auxSrc[i], sizeof(char));
-			}
-		}
-
-	} else if (rest < 0) {
-		for (i = 0; i < n; i++) {
-			memcpy(&dst[(int)permutation[i] - 1], &src[i], sizeof(char));
-		}
-
-	} else {
-		while (((index1 - 1) + rest) < len) {
-			for (i = 0; i < n; i++, index1++) {
-				memcpy(&auxSrc[(int)permutation[i] - 1], &src[i], sizeof(char));
-			}
-
-			for (i = 0; i < n; i++, index2++) {
-				memcpy(&dst[index2], &auxSrc[i], sizeof(char));
-			}
-		}
-
-		for (i = 0; index1 < (len + 1); i++, index1++) {
-			memcpy(&auxSrc[(int)permutation[i] - 1], &src[index1 - 1], sizeof(char));
-		}
-
-		for (i = 0; i < rest; i++, index2++) {
-			memcpy(&dst[index2], &auxSrc[i], sizeof(char));
-		}
-	}
+	memcpy(&dst[index2], "\0", sizeof(char));
 
 	free(auxSrc);
-	return dst;
+	return;
 }
 

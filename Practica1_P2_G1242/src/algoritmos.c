@@ -532,30 +532,21 @@ char* most_common_ngram(int ngram_length, char* string) {
 
 int getRandomLessN(int n) {
 
-	struct timeval seed;
-	gettimeofday(&seed, NULL);
-
-	srand(seed.tv_usec);
+	srand(time(NULL));
 	return (rand() % n);
 }
 
-char* makePermutation(int n) {
+void makePermutation(char* permutation, int n) {
 
-	char* permutation;
 	char* auxPerm;
 	int i;
 	int j = n;
 	int randomValue;
 
-	permutation = (char *) malloc (n * sizeof(char));
-	if (!permutation) {
-		return NULL;
-	}
-
-	auxPerm = (char *) malloc (n * sizeof(char));
+	auxPerm = (char *) calloc ((n + 1), sizeof(char));
 	if (!auxPerm) {
-		free(permutation);
-		return NULL;
+		permutation = NULL;
+		return;
 	}
 
 	for (i = 0; i < n; i++) {
@@ -573,7 +564,7 @@ char* makePermutation(int n) {
 	}
 
 	free(auxPerm);
-	return permutation;
+	return;
 }
 
 void fitArray(char* array, int posEle, int arraySize) {

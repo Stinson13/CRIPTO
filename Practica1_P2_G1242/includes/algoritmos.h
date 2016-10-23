@@ -9,7 +9,7 @@
 #include <math.h>
 #include <time.h>
 
-#define MAX_STR 128
+#define MAX_STR 512
 
 enum Modo {
     CIFRAR, DESCIFRAR
@@ -44,5 +44,5 @@ void free_mpz_matrix(mpz_t** mat, int rows, int cols);
 
 // permutation functions
 int getRandomLessN(int n);
-char* makePermutation(int n);
+void makePermutation(char* permutation, int n);
 void fitArray(char* array, int posEle, int arraySize);
