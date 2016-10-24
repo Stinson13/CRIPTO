@@ -170,7 +170,7 @@ int main (int argc,char *argv[]) {
 	double baseIoC = 0;
 	
 	for (i = 0; i < n; i++) {
-		baseIoC += (alphabet_frequencies[i] * alphabet_frequencies[i]) / (100 * 100);
+		baseIoC += (alphabet_frequencies[i] * (alphabet_frequencies[i] - 1)) / (100 * (100 - 1));
 	}
 	
 	if (fin == NULL) {

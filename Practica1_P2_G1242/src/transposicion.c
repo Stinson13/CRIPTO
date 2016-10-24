@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     	return EXIT_FAILURE;
     }
 
-    if (modo == -1) {
+    if (!permutation || modo == -1) {
         printf("{-C|-D} {-p permutacion | -n Nperm} son obligatorios\n");
 		if (fin != NULL) {
 			fclose(fin);
