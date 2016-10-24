@@ -40,4 +40,4 @@ native: $(SRC)algoritmos.c $(SRC)cifrado_afin.c $(SRC)cifrado_afin_+.c $(SRC)cif
 	$(CC) -g -o $(EXE7) $(SRC)indexofcoincidence.c $(SRC)algoritmos.c -lgmp
 	
 clean:
-	rm -f $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6)
+	rm -f $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7)

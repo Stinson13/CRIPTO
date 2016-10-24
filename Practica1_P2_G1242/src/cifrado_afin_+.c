@@ -10,7 +10,7 @@ void decipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b, mpz_t c
 
 int main (int argc,char *argv[]) {
 	
-	if (argc < 13) {
+	if (argc < 12) {
 		printf("Uso: %s {-C|-D} {-m |Zm|} {-a N} {-b N} {-c N} {-d N} \
 [-i filein] [-o fileout]\n", argv[0]);
 		return 0;
@@ -200,15 +200,15 @@ void cipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b, mpz_t c, 
 	mpz_inits(last, x, y, NULL);
 	
 	for (i = 0; i < size; i++, mpz_set(last, x)) {
-		mpz_set_si(x, (long)(src[i]));	//read x
-		gmp_printf("Ciphering: Current is: %Zd\tLast was %Zd\n", x, last);
-		mpz_add(y, x, last);			//y = x + x'
-		mpz_mul(y, a, y);				//y = a*(x+x')
-		mpz_add(y, y, b);				//y = a*(x+x') + b
-		mpz_mul(y, c, y);				//y = c*(a*(x+x') + b)
-		mpz_add(y, y, d);				//y = c*(a*(x+x') + b) + d
-		mpz_fdiv_r(y, y, m);			//y = c*(a*(x+x') + b) + d % m
-		dst[i] = (char)(mpz_get_si(y));	//write y
+		mpz_set_si(x, (long)(src[i]) - 'A');	//read x
+		//gmp_printf("Ciphering: Current is: %Zd\tLast was %Zd\n", x, last);
+		mpz_add(y, x, last);					//y = x + x'
+		mpz_mul(y, a, y);						//y = a*(x+x')
+		mpz_add(y, y, b);						//y = a*(x+x') + b
+		mpz_mul(y, c, y);						//y = c*(a*(x+x') + b)
+		mpz_add(y, y, d);						//y = c*(a*(x+x') + b) + d
+		mpz_fdiv_r(y, y, m);					//y = c*(a*(x+x') + b) + d % m
+		dst[i] = (char)(mpz_get_si(y));			//write y
 	}
 	
 	mpz_clears(last, x, y, NULL);
@@ -226,17 +226,17 @@ void decipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b, mpz_t c
 	for (i = 0; i < size; i++, mpz_set(last, x)) {
 		mpz_set_si(y, (long)(src[i]));	//read y
 		
-		mpz_sub(x, y, d);				//x = y-d
+		mpz_sub(x, y, d);						//x = y-d
 		getMultInverse(c, m, inv);
-		mpz_mul(x, x, inv);				//x = (y-d)*(c^-1)
-		mpz_sub(x, x, b);				//x = (y-d)*(c^-1)-b
+		mpz_mul(x, x, inv);						//x = (y-d)*(c^-1)
+		mpz_sub(x, x, b);						//x = (y-d)*(c^-1)-b
 		
 		getMultInverse(a, m, inv);
-		mpz_mul(x, x, inv);				//x = ((y-d)*(c^-1)-b)*(a^-1)
-		mpz_sub(x, x, last);			//x = ((y-d)*(c^-1)-b)*(a^-1)-x'
-		mpz_fdiv_r(x, x, m);			//x = ((y-d)*(c^-1)-b)*(a^-1)-x' % m
-		gmp_printf("Deciphering: Current is: %Zd\tLast was %Zd\n", x, last);
-		dst[i] = (char)(mpz_get_si(x));	//write x
+		mpz_mul(x, x, inv);						//x = ((y-d)*(c^-1)-b)*(a^-1)
+		mpz_sub(x, x, last);					//x = ((y-d)*(c^-1)-b)*(a^-1)-x'
+		mpz_fdiv_r(x, x, m);					//x = ((y-d)*(c^-1)-b)*(a^-1)-x' % m
+		//gmp_printf("Deciphering: Current is: %Zd\tLast was %Zd\n", x, last);
+		dst[i] = (char)(mpz_get_si(x) + 'A');	//write x
 	}
 	
 	mpz_clears(x, y, inv, last, NULL);

@@ -17,8 +17,6 @@ int main(int argc, char *argv[]) {
     int index;
     int cipher_len;
     mpz_t m;
-    mpz_t **matrixP;
-    mpz_t **matrixC;
     mpz_t **matrixK;
 	mpz_t **matrixInv;
     int c = 0;
@@ -153,31 +151,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
 	}
 
-    init_mpz_matrix(&matrixP, n, n);
-    if (matrixP == NULL) {
-		mpz_clear(m);
-		return EXIT_FAILURE;
-	}
-
-    init_mpz_matrix(&matrixC, n, n);
-    if (matrixC == NULL) {
-		free_mpz_matrix(matrixP, n, n);
-		mpz_clear(m);
-		return EXIT_FAILURE;
-	}
-
     init_mpz_matrix(&matrixK, n, n);
     if (matrixK == NULL) {
-		free_mpz_matrix(matrixP, n, n);
-		free_mpz_matrix(matrixC, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
 	}
 
 	init_mpz_matrix(&matrixInv, n, n);
     if (matrixInv == NULL) {
-		free_mpz_matrix(matrixP, n, n);
-		free_mpz_matrix(matrixC, n, n);
 		free_mpz_matrix(matrixK, n, n);
 		mpz_clear(m);
 		return EXIT_FAILURE;
@@ -226,12 +207,6 @@ int main(int argc, char *argv[]) {
 			toUpperOnly(strbuf);
 			puts(strbuf);
 			len = strlen(strbuf);
-
-			/*for (i = 0; i < n; i++) {
-				for (j = 0; j < n; j++) {
-					fprintf(fout, "%li ", mpz_get_si(matrixC[i][j]));
-				}
-			}*/
 			
 			cipher(strbuf, strbuf, len, matrixK, n, m);
 			
@@ -258,12 +233,7 @@ int main(int argc, char *argv[]) {
 			if ((len % (n*n)) != 0) {
 				cipher_len += n*n;
 			}
-
-			/*for (i=0; i< cipher_len; i++) {
-				printf("%02x\t", strbuf[i]);
-			}*/
-
-			//putchar('\n');
+			
 			fwrite(strbuf, cipher_len, sizeof(char), fout);
 		}
 
@@ -279,9 +249,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	fclose(fk);
-
-	free_mpz_matrix(matrixP, n, n);
-	free_mpz_matrix(matrixC, n, n);
+	
 	free_mpz_matrix(matrixK, n, n);
 	mpz_clear(m);
 	

@@ -10,7 +10,7 @@ void decipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b);
 
 int main (int argc,char *argv[]) {
 	
-	if (argc < 7) {
+	if (argc < 8) {
 		printf("Uso: %s {-C|-D} {-m |Zm|} {-a N} {-b N} [-i filein] [-o fileout]\n", argv[0]);
 		return 0;
 	}
@@ -185,11 +185,11 @@ void cipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b) {
 	mpz_inits(x, y, NULL);
 	
 	for (i = 0; i < size; i++) {
-		mpz_set_si(x, (long)(src[i]));	//read x
-		mpz_mul(y, a, x);				//y = a*x
-		mpz_add(y, y, b);				//y = a*x + b
-		mpz_fdiv_r(y, y, m);			//y = a*x + b % m
-		gmp_printf ("y = %Zd\n", y);
+		mpz_set_si(x, (long)(src[i] - 'A'));	//read x
+		mpz_mul(y, a, x);						//y = a*x
+		mpz_add(y, y, b);						//y = a*x + b
+		mpz_fdiv_r(y, y, m);					//y = a*x + b % m
+		
 		dst[i] = (char)(mpz_get_si(y));	//write y
 	}
 	
@@ -205,14 +205,14 @@ void decipher(char* src, char* dst, int size, mpz_t m, mpz_t a, mpz_t b) {
 	mpz_inits(x, y, inv, NULL);
 	
 	for (i = 0; i < size; i++) {
-		mpz_set_si(y, (long)(src[i]));	//read y
+		mpz_set_si(y, (long)(src[i]));			//read y
 		
-		mpz_sub(x, y, b);				//x = y-b
+		mpz_sub(x, y, b);						//x = y-b
 		getMultInverse(a, m, inv);
-		mpz_mul(x, x, inv);				//x = (y-b)*(a^-1)
-		mpz_fdiv_r(x, x, m);			//x = (y-b)*(a^-1) % m
+		mpz_mul(x, x, inv);						//x = (y-b)*(a^-1)
+		mpz_fdiv_r(x, x, m);					//x = (y-b)*(a^-1) % m
 		
-		dst[i] = (char)(mpz_get_si(x));	//write x
+		dst[i] = (char)(mpz_get_si(x) + 'A');	//write x
 	}
 	
 	mpz_clears(x, y, inv, NULL);
