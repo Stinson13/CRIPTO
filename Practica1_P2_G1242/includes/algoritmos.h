@@ -6,6 +6,10 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef  _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
+#define _POSIX_C_SOURCE 200112L
 #include <math.h>
 #include <time.h>
 
@@ -24,7 +28,7 @@ void getGDC(mpz_t a, mpz_t b, mpz_t gdc);
 int getMultInverse(mpz_t a, mpz_t b, mpz_t inverse);
 void toModM(mpz_t x, mpz_t m);
 //Arguments will be read as ints, last argument *must* be 0
-double average(int how_many, double* vals);
+long double average(int how_many, long double* vals);
 
 //will count patter overlaps (say 'ababa' as two 'aba')
 //it could be considered a lazy matcher in an untraditional sense

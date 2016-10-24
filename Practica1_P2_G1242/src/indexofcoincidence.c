@@ -255,43 +255,87 @@ int main (int argc,char *argv[]) {
 	int j = 0, k = 0;
 	int block_size = 0;
 	int total_occurences = 0;
-	double avgIoC = 0;
-	double diff = 1;
+	long double avgIoC = 0;
+	long double diff = 1;
+	long double* iocs;
+	long acc;
 	
-	int* occurences = (int*) malloc(n * sizeof(int));
-	if (occurences != NULL) {
-		//for each possible block size
-		for (i = 1, len = ftell(ftemp); i < len; i++, avgIoC = 0) {
-			//for each element index within the block
-			for (j = 0; j < i; j++) {
-				memset(occurences, 0, n * sizeof(int));
-				//add the index of coincidence to accumulator
-				for (k = j; k < len; k += i) {
-					occurences[text[k]%n]++; 
+	int** occurences;
+	//for each possible block size
+	for (i = 1, len = ftell(ftemp); i < len && i < 20; i++, avgIoC = 0) {
+		//for each element index within the block
+		occurences = (int**) malloc (i*sizeof(int*));
+		if (occurences == NULL) {
+			printf("Error al reservar memoria para calcular idndices \
+de coincidencia\n");
+		}
+		for (j = 0; j < i; j++) {
+			occurences[j] = (int*)calloc(n, sizeof(int));
+			if (occurences[j] == NULL) {
+				printf("Error de memoria para indice de coincidencia %i", j);
+				for (j--; j >= 0; j--){
+					free(occurences[j]);
 				}
-				for (k = 0; k < n; k++) {
-					//printf("Occurences: %i\tblocks: %i\n", occurences[k], (j < (len%i) ? (len/i + 1): (len/i)));
-					if (occurences[k] > 1) {
-						if (j < len % i) {
-							avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / ((len/i + 1) * (len/i));
-						} else if (len/i > 2) {
-							avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / (len/i * (len/i-1));
-						}
+				free(occurences);
+				return -1;
+			}
+		}
+		for (j = 0; j < len; j++) {
+			occurences[j%i][text[j]%n]++;
+		}
+		iocs = (long double*)calloc(i, sizeof(long double));
+		if (iocs == NULL) {
+			printf("Error de memoria para guardar indices de coincidencia\n");
+			for (j = 0; j < i; j++) {
+				free(occurences[j]);
+			}
+			free(occurences);
+			return -1;
+		}
+		for (j = 0; j < i; j++) {
+			for (k = 0, acc = 0; k < n; k++) {
+				//printf("Adding %i\n", occurences[j][k]);
+				acc += occurences[j][k];
+			}
+			for (k = 0; k < n; k++) {
+				printf("j: %i, k:%i, acc: %li, occurence: %i\n", j, k, acc, occurences[j][k]);
+				iocs[j] += ((long double)occurences[j][k] / acc)
+						 * ((long double)(occurences[j][k] - 1) / (acc - 1));
+			}
+		}
+		avgIoC = average(i, iocs);
+		
+		/*for (j = 0; j < i; j++) {
+			memset(occurences, 0, n * sizeof(int));
+			//add the index of coincidence to accumulator
+			for (k = j; k < len; k += i) {
+				occurences[text[k]%n]++; 
+			}
+			for (k = 0; k < n; k++) {
+				//printf("Occurences: %i\tblocks: %i\n", occurences[k], (j < (len%i) ? (len/i + 1): (len/i)));
+				if (occurences[k] > 1) {
+					if (j < len % i) {
+						avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / ((len/i + 1) * (len/i));
+					} else if (len/i > 2) {
+						avgIoC += ((double)occurences[k] * (occurences[k] - 1)) / (len/i * (len/i-1));
 					}
 				}
 			}
-			//find average index of coincidence
-			avgIoC /= i;
-			printf("Avg is %lf, diff is %lf for block size %i\n", avgIoC, fabs(baseIoC - avgIoC), i);
-			if (fabs(baseIoC - avgIoC) < diff) {
-				block_size = i;
-				diff = fabs(baseIoC - avgIoC);
-			}
+		}*/
+		//find average index of coincidence
+		//avgIoC /= i;
+		printf("Avg is %Le, diff is %Le for block size %i\n", avgIoC, fabsl(baseIoC - avgIoC), i);
+		if (fabsl(baseIoC - avgIoC) < diff) {
+			block_size = i;
+			diff = fabs(baseIoC - avgIoC);
+		}
+		for (j = 0; j < i; j++) {
+			free(occurences[j]);
 		}
 		free(occurences);
-	} else {
-		printf("Insuficiente memoria para la tabla de frecuencias\n");
+		free(iocs);
 	}
+	//free(occurences);
 	
 	if (block_size > 0) {
 		printf("El tamano de bloque es %d\n", block_size);
