@@ -177,15 +177,17 @@ int main(int argc, char *argv[]) {
 		fout = stdout;
 	}
 
-	/*while (!feof(fin) && !ferror(fin)) {
-		strbuf = (char *) calloc (MAX_STR, sizeof(char));
-		if (!strbuf) {
-			printf("Error al reservar memoria.\n");
-			return EXIT_FAILURE;
-		}
+	strbuf = (char *) calloc (k1size*k2size + 1, sizeof(char));
+	if (!strbuf) {
+		printf("Error al reservar memoria.\n");
+		return EXIT_FAILURE;
+	}
+	
+	int len;
 
+	while (!feof(fin) && !ferror(fin)) {
 		if (fin == stdin) {
-			fgets(strbuf, MAX_STR, fin);
+			fgets(strbuf, k1size*k2size, fin);
 			if(feof(fin)) {
 				break;
 			}
@@ -198,7 +200,7 @@ int main(int argc, char *argv[]) {
 			}
 
 		} else {
-			len = fread(strbuf, sizeof(char), MAX_STR, fin);
+			len = fread(strbuf, sizeof(char), k1size*k2size, fin);
 			strbuf[len]='\0';
 		}
 
@@ -208,28 +210,28 @@ int main(int argc, char *argv[]) {
 			toUpperOnly(strbuf);
 
 			// cipher
-
-			//fprintf(fout, "%s\n", strbuf);
+			cipher(strbuf, strbuf, k1, k2);
+			fprintf(fout, "%s\n", strbuf);
 			
 		} else {
 			
 			// decipher
-
-			//fprintf(fout, "%s", strbuf);
+			decipher(strbuf, strbuf, k1, k2);
+			fprintf(fout, "%s", strbuf);
 		}
-
-		free(strbuf);
-	}*/
-	printf("La clave 1 es: ");
-	for (i = 0; i < k1size; i++) {
+	}
+	
+	free(strbuf);
+	/*printf("La clave 1 es: ");
+	for (i = 0; k1[i] != 0; i++) {
 		printf("%d ", k1[i]);
 	}
 	putchar('\n');
 	printf("La clave 2 es: ");
-	for (i = 0; i < k2size; i++) {
+	for (i = 0; k2[i] != 0; i++) {
 		printf("%d ", k2[i]);
 	}
-	putchar('\n');
+	putchar('\n');*/
 	
 	free(k1);
 	free(k2);
@@ -241,4 +243,112 @@ int main(int argc, char *argv[]) {
 	}
 
 	return EXIT_SUCCESS;
+}
+
+void cipher(char* src, char* dst, int* p1, int* p2) {
+
+	if (!src || !dst || !p1 || !p2) {
+		return;
+	}
+
+	int i, j;
+	int len = strlen(src);
+	int rest;
+	
+	for (i = 0; p1[i] != 0; i++);
+	int cols = i;
+	for (i = 0; p2[i] != 0; i++);
+	int rows = i;
+	
+	char* p;
+
+	for (rest = len, p = src; rest > 0; rest -= cols*rows, p += cols*rows) {
+		
+		// Añadimos padding si es necesario
+		if (rest < cols*rows) {
+			for (i = rest; i < cols*rows; i++) {
+				src[i] = 'A';
+			}
+		}
+
+		for(i = 0; i < cols; i++) {
+			for (j = 0; j < rows; j++) {
+				if (p[j*rows+i] == p[j*rows + p1[i] - 1]) {
+					continue;
+				}
+				//memory-efficient swap
+				printf("Swapcols %hhx and %hhx\n", p[j*rows+i], p[j*rows + p1[i] - 1]);
+				p[j*rows+i] += p[j*rows + p1[i] - 1];
+				p[j*rows + p1[i] - 1] = p[j*rows+i] - p[j*rows + p1[i] - 1];
+				p[j*rows+i] = p[j*rows+i] - p[j*rows + p1[i] - 1];
+				printf("Now %hhx and %hhx\n", p[j*rows+i], p[j*rows + p1[i] - 1]);
+			}
+		}
+		
+		for(i = 0; i < rows; i++) {
+			for (j = 0; j < cols; j++) {
+				if (p[i*rows + j] == p[(p2[i] - 1) * rows + j]) {
+					continue;
+				}
+				//memory-efficient swap
+				printf("Swaprow %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
+				p[i*rows + j] += p[(p2[i] - 1) * rows + j];
+				p[(p2[i] - 1) * rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
+				p[i*rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
+				printf("Now %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
+			}
+		}
+	}
+}
+
+void decipher(char* src, char* dst, int* p1, int* p2) {
+
+	if (!src || !dst || !p1 || !p2) {
+		return;
+	}
+
+	int i, j;
+	int len = strlen(src);
+	int rest;
+	
+	for (i = 0; p1[i] != 0; i++);
+	int cols = i;
+	for (i = 0; p2[i] != 0; i++);
+	int rows = i;
+	
+	char* p;
+
+	for (rest = len, p = src; rest > 0; rest -= cols*rows, p += cols*rows) {
+		
+		// Añadimos padding si es necesario
+		if (rest < cols*rows) {
+			for (i = rest; i < cols*rows; i++) {
+				src[i] = 'A';
+			}
+		}
+		
+		for(i = 0; i < rows; i++) {
+			for (j = 0; j < cols; j++) {
+				if (p[i*rows + j] == p[(p2[i] - 1) * rows + j]) {
+					continue;
+				}
+				//memory-efficient swap
+				p[i*rows + j] += p[(p2[i] - 1) * rows + j];
+				p[(p2[i] - 1) * rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
+				p[i*rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
+			}
+		}
+		
+		for(i = 0; i < cols; i++) {
+			for (j = 0; j < rows; j++) {
+				if (p[j*rows+i] == p[j*rows + p1[i] - 1]) {
+					continue;
+				}
+				//memory-efficient swap
+				p[j*rows+i] += p[j*rows + p1[i] - 1];
+				p[j*rows + p1[i] - 1] = p[j*rows+i] - p[j*rows + p1[i] - 1];
+				p[j*rows+i] = p[j*rows+i] - p[j*rows + p1[i] - 1];
+			}
+		}
+	}
 }
