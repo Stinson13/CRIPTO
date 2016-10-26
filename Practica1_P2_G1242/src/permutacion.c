@@ -211,13 +211,16 @@ int main(int argc, char *argv[]) {
 
 			// cipher
 			cipher(strbuf, strbuf, k1, k2);
-			fprintf(fout, "%s\n", strbuf);
 			
 		} else {
 			
 			// decipher
 			decipher(strbuf, strbuf, k1, k2);
-			fprintf(fout, "%s", strbuf);
+		}
+		
+		fwrite(strbuf, len, sizeof(char), fout);
+		if (fout == stdout) {
+			putchar('\n');
 		}
 	}
 	
@@ -253,8 +256,8 @@ void cipher(char* src, char* dst, int* p1, int* p2) {
 
 	int i, j;
 	int len = strlen(src);
+	int index1, index2;
 	int rest;
-	
 	for (i = 0; p1[i] != 0; i++);
 	int cols = i;
 	for (i = 0; p2[i] != 0; i++);
@@ -271,31 +274,40 @@ void cipher(char* src, char* dst, int* p1, int* p2) {
 			}
 		}
 
-		for(i = 0; i < cols; i++) {
-			for (j = 0; j < rows; j++) {
-				if (p[j*rows+i] == p[j*rows + p1[i] - 1]) {
-					continue;
+		//swap cols
+		char* auxSrc = (char *) calloc (cols, sizeof(char));
+		
+		for (j = 0; j < rows; j++) {
+			for (index1 = 0, index2 = 0; index1 < cols;) {
+				for (i = 0; index1 < cols; i++, index1++){
+					putchar(p[j*rows + index1]);
+					memcpy(&auxSrc[p1[i] - 1], &p[j*rows + index1], sizeof(char));
 				}
-				//memory-efficient swap
-				printf("Swapcols %hhx and %hhx\n", p[j*rows+i], p[j*rows + p1[i] - 1]);
-				p[j*rows+i] += p[j*rows + p1[i] - 1];
-				p[j*rows + p1[i] - 1] = p[j*rows+i] - p[j*rows + p1[i] - 1];
-				p[j*rows+i] = p[j*rows+i] - p[j*rows + p1[i] - 1];
-				printf("Now %hhx and %hhx\n", p[j*rows+i], p[j*rows + p1[i] - 1]);
+				putchar('\n');
+
+				for (i = 0; i < cols; i++, index2++) {
+					putchar(auxSrc[i]);
+					memcpy(&p[j*rows + index2], &auxSrc[i], sizeof(char));
+				}
+				putchar('\n');
 			}
+			memset(auxSrc, 0, cols*sizeof(char));
 		}
 		
+		free(auxSrc);
+		
+		//swap rows
 		for(i = 0; i < rows; i++) {
 			for (j = 0; j < cols; j++) {
-				if (p[i*rows + j] == p[(p2[i] - 1) * rows + j]) {
+				//printf("Swap [%i][%i] and [%i][%i]\n", i, j, p2[i], j);
+				if (p[i*rows + j] == p[(p2[i] - 1)*rows + j]) {
 					continue;
 				}
-				//memory-efficient swap
-				printf("Swaprow %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
-				p[i*rows + j] += p[(p2[i] - 1) * rows + j];
-				p[(p2[i] - 1) * rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
-				p[i*rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
-				printf("Now %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
+				//printf("Swaprow %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
+				p[i*rows + j] 			= p[i*rows + j] + p[(p2[i] - 1)*rows + j];
+				p[(p2[i] - 1)*rows + j] = p[i*rows + j] - p[(p2[i] - 1)*rows + j];
+				p[i*rows + j] 			= p[i*rows + j] - p[(p2[i] - 1)*rows + j];
+				//printf("Now %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
 			}
 		}
 	}
@@ -308,6 +320,7 @@ void decipher(char* src, char* dst, int* p1, int* p2) {
 	}
 
 	int i, j;
+	int index1, index2;
 	int len = strlen(src);
 	int rest;
 	
@@ -326,29 +339,41 @@ void decipher(char* src, char* dst, int* p1, int* p2) {
 				src[i] = 'A';
 			}
 		}
-		
+		//swap rows
 		for(i = 0; i < rows; i++) {
 			for (j = 0; j < cols; j++) {
-				if (p[i*rows + j] == p[(p2[i] - 1) * rows + j]) {
+				//printf("Swap [%i][%i] and [%i][%i]\n", i, j, p2[i], j);
+				if (p[i*rows + j] == p[(p2[i] - 1)*rows + j]) {
 					continue;
 				}
-				//memory-efficient swap
-				p[i*rows + j] += p[(p2[i] - 1) * rows + j];
-				p[(p2[i] - 1) * rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
-				p[i*rows + j] = p[i*rows + j] - p[(p2[i] - 1) * rows + j];
+				//printf("Swaprow %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
+				p[i*rows + j] 			= p[i*rows + j] + p[(p2[i] - 1)*rows + j];
+				p[(p2[i] - 1)*rows + j] = p[i*rows + j] - p[(p2[i] - 1)*rows + j];
+				p[i*rows + j] 			= p[i*rows + j] - p[(p2[i] - 1)*rows + j];
+				//printf("Now %hhx and %hhx\n", p[i*rows + j],  p[(p2[i] - 1) * rows + j]);
 			}
 		}
 		
-		for(i = 0; i < cols; i++) {
-			for (j = 0; j < rows; j++) {
-				if (p[j*rows+i] == p[j*rows + p1[i] - 1]) {
-					continue;
+		//swap cols
+		char* auxSrc = (char *) calloc (cols, sizeof(char));
+		
+		for (j = 0; j < rows; j++) {
+			for (index1 = 0, index2 = 0; index1 < cols;) {
+				for (i = 0; index1 < cols; i++, index1++){
+					putchar(p[j*rows + index1]);
+					memcpy(&auxSrc[i], &p[j*rows + index1], sizeof(char));
 				}
-				//memory-efficient swap
-				p[j*rows+i] += p[j*rows + p1[i] - 1];
-				p[j*rows + p1[i] - 1] = p[j*rows+i] - p[j*rows + p1[i] - 1];
-				p[j*rows+i] = p[j*rows+i] - p[j*rows + p1[i] - 1];
+				putchar('\n');
+
+				for (i = 0; i < cols; i++, index2++) {
+					putchar(auxSrc[p1[i]-1]);
+					memcpy(&p[j*rows + index2], &auxSrc[p1[i]-1], sizeof(char));
+				}
+				putchar('\n');
 			}
+			memset(auxSrc, 0, cols*sizeof(char));
 		}
+		
+		free(auxSrc);
 	}
 }

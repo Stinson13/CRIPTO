@@ -28,7 +28,7 @@ void getGDC(mpz_t a, mpz_t b, mpz_t gdc);
 int getMultInverse(mpz_t a, mpz_t b, mpz_t inverse);
 void toModM(mpz_t x, mpz_t m);
 //Arguments will be read as ints, last argument *must* be 0
-long double average(int how_many, long double* vals);
+double average(int how_many, double* vals);
 
 //will count patter overlaps (say 'ababa' as two 'aba')
 //it could be considered a lazy matcher in an untraditional sense

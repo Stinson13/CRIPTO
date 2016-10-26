@@ -467,9 +467,9 @@ void free_mpz_matrix(mpz_t** mat, int rows, int cols) {
        free(mat);
 }
 
-long double average(int how_many, long double* vals) {
+double average(int how_many, double* vals) {
 	int i = 0;
-	long double sum = 0;
+	double sum = 0;
 	
 	for (i = 0; i < how_many; i++) {
 		sum += vals[i];
