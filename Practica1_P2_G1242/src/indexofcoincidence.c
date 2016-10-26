@@ -1,5 +1,6 @@
 #include "../includes/algoritmos.h"
 #define MODULO_M 26
+#define EPSILON_ERROR 0.005
 
 //Porcentajes desde la A a la Z
 double spanish_1gram_freqs[] = {11.96, 0.92, 2.92, 6.87, 16.78, 0.52, 0.73, 0.89, 4.15, 0.3, 0, 8.37, 2.12, 7.01, 8.69, 2.77, 1.53, 4.94, 7.88, 3.31, 4.8, 0.39, 0, 0.06, 1.54, 0.15};
@@ -170,9 +171,8 @@ int main (int argc,char *argv[]) {
 	double baseIoC = 0;
 	
 	for (i = 0; i < n; i++) {
-		baseIoC += (alphabet_frequencies[i] * (alphabet_frequencies[i] - 1)) / (100 * (100 - 1));
+		baseIoC += (alphabet_frequencies[i] * (alphabet_frequencies[i] /*- 1*/)) / (100 * (100 /*- 1*/));
 	}
-	
 	if (fin == NULL) {
 		fin = stdin;
 	}
@@ -251,6 +251,8 @@ int main (int argc,char *argv[]) {
 	}
 	//write end of string
 	p[0] = '\0';
+	toUpperOnly(text);
+	fclose(ftemp);
 	
 	int j = 0, k = 0;
 	int block_size = 0;
@@ -262,7 +264,7 @@ int main (int argc,char *argv[]) {
 	
 	int** occurences;
 	//for each possible block size
-	for (i = 1, len = ftell(ftemp); i < len && i < 20; i++, avgIoC = 0) {
+	for (i = 1, len = strlen(text); i < len && i < 20; i++, avgIoC = 0) {
 		//for each element index within the block
 		occurences = (int**) malloc (i*sizeof(int*));
 		if (occurences == NULL) {
@@ -281,7 +283,8 @@ de coincidencia\n");
 			}
 		}
 		for (j = 0; j < len; j++) {
-			occurences[j%i][text[j]%n]++;
+			//printf("i: %i j: %i char: %i %c\n", i, j, text[j] % n, text[j]);
+			occurences[j%i][text[j] - 'A']++;
 		}
 		iocs = (long double*)calloc(i, sizeof(long double));
 		if (iocs == NULL) {
@@ -293,15 +296,18 @@ de coincidencia\n");
 			return -1;
 		}
 		for (j = 0; j < i; j++) {
+			//printf("(%i, %i): [", i, j);
 			for (k = 0, acc = 0; k < n; k++) {
-				//printf("Adding %i\n", occurences[j][k]);
+				//printf("%i, ", occurences[j][k]);
 				acc += occurences[j][k];
 			}
+			//printf("]\n");
+			//printf("[");
 			for (k = 0; k < n; k++) {
-				printf("j: %i, k:%i, acc: %li, occurence: %i\n", j, k, acc, occurences[j][k]);
-				iocs[j] += ((long double)occurences[j][k] / acc)
-						 * ((long double)(occurences[j][k] - 1) / (acc - 1));
+				//printf("%Lf, ", (((long double)occurences[j][k]) / acc) * (((long double)occurences[j][k]) / acc));
+				iocs[j] += (((long double)occurences[j][k]) / acc) * (alphabet_frequencies[k]/100);//(((long double)occurences[j][k] - 1) / (acc - 1));
 			}
+			//printf("]\n");
 		}
 		avgIoC = average(i, iocs);
 		
@@ -324,7 +330,15 @@ de coincidencia\n");
 		}*/
 		//find average index of coincidence
 		//avgIoC /= i;
-		printf("Avg is %Le, diff is %Le for block size %i\n", avgIoC, fabsl(baseIoC - avgIoC), i);
+		printf("Avg is %Lf, diff is %Le for block size %i\n", avgIoC, fabsl(baseIoC - avgIoC), i);
+		if (diff < EPSILON_ERROR) {
+			for (j = 0; j < i; j++) {
+				free(occurences[j]);
+			}
+			free(occurences);
+			free(iocs);
+			break;
+		}
 		if (fabsl(baseIoC - avgIoC) < diff) {
 			block_size = i;
 			diff = fabs(baseIoC - avgIoC);
@@ -354,7 +368,6 @@ de coincidencia\n");
 	if (fout != stdout) {
 		fclose(fout);
 	}
-	fclose(ftemp);
 	free(text);
 	
 	return 0;

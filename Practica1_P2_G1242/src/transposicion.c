@@ -3,7 +3,7 @@
 #define NOM_FILEPERM "permutacion.dat"
 
 void cipher(char* src, char* dst, char* permutation);
-void descipher(char* src, char* dst, char* permutation);
+void decipher(char* src, char* dst, char* permutation);
 
 int main(int argc, char *argv[]) {
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 			
 		} else {
 			
-			descipher(strbuf, strbuf, permutation);
+			decipher(strbuf, strbuf, permutation);
 			if (!strbuf) {
 				printf("Error al cifrar el texto plano.\n");
 				return EXIT_FAILURE;
@@ -290,7 +290,7 @@ void cipher(char* src, char* dst, char* permutation) {
 	return;
 }
 
-void descipher(char* src, char* dst, char* permutation) {
+void decipher(char* src, char* dst, char* permutation) {
 
 	if (!src || !dst || !permutation) {
 		return;
